@@ -1,0 +1,277 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// this needs to be auto created in the database
+model Permissions {
+  uuid        String @id @default(uuid())
+  permission  String
+  description String
+
+  userPermissions UserPermissions[]
+
+  @@map("tbl_permissions")
+}
+
+// holds user data, with authentication details
+model Users {
+  uuid           String  @id @default(uuid())
+  name           String
+  email          String  @unique
+  passwordHash   String  @map("password_hash")
+  profilePicture String? @map("profile_picture")
+  phoneNumber    String? @map("phone_number")
+  bio            String?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp()
+
+  userPermissions          UserPermissions[]
+  userTokens               UserTokens[]
+  userIntegration          UserIntegration?
+  userSecuritySettings     UserSecuritySettings?
+  userNotificationSettings UserNotificationSettings?
+  workspaces               Workspaces[]
+  projectMembers           ProjectMembers[]
+  taskMembers              TaskMembers[]
+  taskComments             TaskComments[]
+  chatMessages             BoardChatMessages[]
+
+  @@map("tbl_users")
+}
+
+// the creating an user is automatically created as a REGULAR_USER (admin should be hardcoded)
+model UserPermissions {
+  uuid           String @id @default(uuid())
+  userUuid       String @map("user_uuid")
+  permissionUuid String @map("permission_uuid")
+
+  users       Users       @relation(fields: [userUuid], references: [uuid])
+  permissions Permissions @relation(fields: [permissionUuid], references: [uuid])
+
+  @@map("tbl_user_permissions")
+}
+
+model UserTokens {
+  uuid         String   @id @default(uuid())
+  userUuid     String   @map("user_uuid")
+  refreshToken String?  @map("refresh_token")
+  issuedAt     String?  @map("issued_at")
+  expiresAt    String?  @map("expires_at")
+  deviceInfo   String?  @map("device_info")
+  revokedAt    String?  @map("revoked_at")
+  ipAddress    String?  @map("ip_address")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  users Users @relation(fields: [userUuid], references: [uuid])
+
+  @@map("tbl_user_tokens")
+}
+
+model UserIntegration {
+  userUuid        String   @id @map("user_uuid")
+  integrationType String?   @map("integration_type")
+  accessToken     String?   @map("access_token")
+  refreshToken    String?   @map("refresh_token")
+  details         String?
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  users Users @relation(fields: [userUuid], references: [uuid])
+
+  @@map("tbl_user_integration")
+}
+
+model UserSecuritySettings {
+  userUuid         String    @id @map("user_uuid")
+  twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
+  twoFactorType    String?    @default("email") @map("two_factor_type")
+  backupCodes      String?   @map("backup_codes")
+  lastLogin        DateTime? @map("last_login") @db.Timestamp()
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  users Users @relation(fields: [userUuid], references: [uuid])
+
+  @@map("tbl_user_security_settings")
+}
+
+model UserNotificationSettings {
+  userUuid               String  @id @map("user_uuid")
+  emailNotifications     Boolean @default(true) @map("email_notifications")
+  pushNotifications      Boolean @default(true) @map("push_notifications")
+  inAppNotifications     Boolean @default(true) @map("in_app_notifications")
+  notifyOnMentions       Boolean @default(true) @map("notify_on_mentions")
+  notifyOnTaskAssignment Boolean @default(true) @map("notify_task_assignment")
+  digestFrequency        String  @default("daily") @map("digest_frequency")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users Users @relation(fields: [userUuid], references: [uuid])
+
+  @@map("tbl_user_notification_settings")
+}
+
+model Workspaces {
+  uuid            String  @id() @default(uuid())
+  ownerUuid       String  @map("owner_uuid")
+  name            String
+  description     String?
+  backgroundImage String? @map("background_image")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp()
+
+  users Users @relation(fields: [ownerUuid], references: [uuid])
+
+  projects Projects[]
+
+  @@map("tbl_workspaces")
+}
+
+model ProjectVisibility {
+  uuid        String  @id() @default(uuid())
+  name        String
+  description String?
+
+  projects Projects[]
+
+  @@map("tbl_project_visibility")
+}
+
+model ProjectPermissions {
+  uuid        String  @id() @default(uuid())
+  name        String
+  description String?
+
+  projectMember ProjectMembers[]
+
+  @@map("tbl_project_permissions")
+}
+
+model Projects {
+  uuid            String  @id() @default(uuid())
+  workspaceUuid   String  @map("workspace_uuid")
+  name            String
+  description     String?
+  backgroundImage String? @map("background_image")
+  visibilityUuid  String  @map("visibility_uuid")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp()
+
+  workspace         Workspaces        @relation(fields: [workspaceUuid], references: [uuid])
+  projectVisibility ProjectVisibility @relation(fields: [visibilityUuid], references: [uuid])
+  projectMembers    ProjectMembers[]
+  boards            Boards[]
+
+  @@map("tbl_projects")
+}
+
+model ProjectMembers {
+  uuid           String @id @default(uuid())
+  projectUuid    String @map("project_uuid")
+  userUuid       String @map("user_uuid")
+  permissionUuid String @map("permission_uuid")
+
+  joinedAt  DateTime  @default(now()) @map("joined_at")
+  removedAt DateTime? @map("removed_at") @db.Timestamp()
+
+  projects   Projects           @relation(fields: [projectUuid], references: [uuid])
+  users      Users              @relation(fields: [userUuid], references: [uuid])
+  permission ProjectPermissions @relation(fields: [permissionUuid], references: [uuid])
+
+  @@map("tbl_project_members")
+}
+
+model Boards {
+  uuid            String  @id @default(uuid())
+  projectUuid     String  @map("project_uuid")
+  backgroundImage String? @map("background_image")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp()
+
+  projects Projects @relation(fields: [projectUuid], references: [uuid])
+
+  tasks        Tasks[]
+  chatMessages BoardChatMessages[]
+
+  @@map("tbl_boards")
+}
+
+model Tasks {
+  uuid            String    @id @default(uuid())
+  boardUuid       String    @map("board_uuid")
+  backgroundImage String?   @map("background_image")
+  title           String
+  description     String?
+  dueDate         DateTime? @db.Timestamp()
+  tagsList        String?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamp()
+
+  boards Boards @relation(fields: [boardUuid], references: [uuid])
+
+  taskMembers  TaskMembers[]
+  taskComments TaskComments[]
+
+  @@map("tbl_tasks")
+}
+
+model TaskMembers {
+  uuid             String @id @default(uuid())
+  taksUuid         String @map("task_uuid")
+  associatedToUuid String @map("associated_to_uuid")
+
+  joinedAt  DateTime  @default(now()) @map("joined_at")
+  removedAt DateTime? @map("removed_at") @db.Timestamp()
+
+  tasks Tasks @relation(fields: [taksUuid], references: [uuid])
+  users Users @relation(fields: [associatedToUuid], references: [uuid])
+
+  @@map("tbl_task_members")
+}
+
+model TaskComments {
+  uuid     String @id @default(uuid())
+  taksUuid String @map("task_uuid")
+  userUuid String @map("user_uuid")
+  message  String
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  removedAt DateTime? @map("removed_at") @db.Timestamp()
+
+  tasks Tasks @relation(fields: [taksUuid], references: [uuid])
+  users Users @relation(fields: [userUuid], references: [uuid])
+
+  @@map("tbl_task_comments")
+}
+
+// chat per board
+model BoardChatMessages {
+  uuid      String @id @default(uuid())
+  boardUuid String @map("board_uuid")
+  userUuid  String @map("user_uuid")
+  message   String
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  removedAt DateTime? @map("removed_at") @db.Timestamp()
+
+  tasks Boards @relation(fields: [boardUuid], references: [uuid])
+  users Users  @relation(fields: [userUuid], references: [uuid])
+
+  @@map("tbl_board_chat_messages")
+}
