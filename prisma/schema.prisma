@@ -39,7 +39,7 @@ model Users {
   deletedAt DateTime? @map("deleted_at") @db.Timestamp()
 
   userPermissions          UserPermissions[]
-  userTokens               UserTokens[]
+  userTokens               UserTokens?
   userIntegration          UserIntegration?
   userSecuritySettings     UserSecuritySettings?
   userNotificationSettings UserNotificationSettings?
@@ -65,8 +65,7 @@ model UserPermissions {
 }
 
 model UserTokens {
-  uuid         String   @id @default(uuid())
-  userUuid     String   @map("user_uuid")
+  userUuid     String   @id @map("user_uuid")
   refreshToken String?  @map("refresh_token")
   issuedAt     String?  @map("issued_at")
   expiresAt    String?  @map("expires_at")

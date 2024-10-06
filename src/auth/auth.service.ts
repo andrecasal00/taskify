@@ -37,7 +37,7 @@ export class AuthService {
       throw new ForbiddenException('Access Denied');
     }
 
-    const tokens = await this.generateTokens(user.uuid, user.email);
+    const tokens = await this.generateTokens(user.uuid);
     await this.updateRefreshTokens(user.uuid, tokens.refresh_token);
     return tokens;
   }
@@ -88,53 +88,52 @@ export class AuthService {
       }
     })
 
-    const tokens = await this.generateTokens(newUser.uuid, newUser.email);
+    const tokens = await this.generateTokens(newUser.uuid);
     this.updateRefreshTokens(newUser.uuid, tokens.refresh_token);
   }
 
-  async logout(credentialsUuid: string) {
-   /* await this.prisma.users.update({
+  async logout(userUuid: string) {
+   return await this.prisma.userTokens.update({
       where: {
-        uuid: credentialsUuid,
-        refreshTokenHash: {
+        userUuid: userUuid,
+        refreshToken: {
           not: null,
         },
       },
       data: {
-        refreshTokenHash: null,
+        refreshToken: null,
       },
-    });*/
+    });
   }
 
   // check if refresh token matches and generate new one
-  async refreshTokens(credentialUuid: string, refreshToken: string) {
-    const user = await this.prisma.users.findUnique({
+  async refreshTokens(userUuid: string, refreshToken: string) {
+    const user = await this.prisma.userTokens.findUnique({
       where: {
-        uuid: credentialUuid,
+        userUuid: userUuid,
       },
     });
 
-   /* const refreshTokenMatches = await argon.verify(
-      user.refreshTokenHash,
+   const refreshTokenMatches = await argon.verify(
+      user.refreshToken,
       refreshToken,
     );
     if (!refreshTokenMatches) {
       throw new ForbiddenException('Access Denied');
-    }*/
+    }
 
-    const tokens = await this.generateTokens(user.uuid, user.email);
-    await this.updateRefreshTokens(user.uuid, tokens.refresh_token);
+    const tokens = await this.generateTokens(user.userUuid);
+    await this.updateRefreshTokens(user.userUuid, tokens.refresh_token);
     return tokens;
   }
 
   // @method = to generate new user tokens
   // @parameters = information that I want to put in the token
-  async generateTokens(credentialUuid: string, username: String) {
+  async generateTokens(credentialUuid: string) {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
-          uuid: credentialUuid,
-          username: username,
+          uuid: credentialUuid
         },
         {
           expiresIn: 1 * 60,
@@ -144,8 +143,7 @@ export class AuthService {
 
       this.jwtService.signAsync(
         {
-          uuid: credentialUuid,
-          username: username,
+          uuid: credentialUuid
         },
         {
           expiresIn: 24 * 7 * 60 * 60,
@@ -161,16 +159,29 @@ export class AuthService {
   }
 
   // update the refresh token of a user in the database
-  async updateRefreshTokens(credentialsUuid: string, refreshToken: string) {
+  async updateRefreshTokens(userUuid: string, refreshToken: string) {
    /* const hashToken = await argon.hash(refreshToken);
-    await this.prisma.users.update({
+    await this.prisma.userTokens.update({
       where: {
         uuid: credentialsUuid,
       },
       data: {
-        refreshTokenHash: hashToken,
+        refreshToken: hashToken,
       },
-    });*/
+    }); */
+
+    await this.prisma.userTokens.upsert({
+      where: {
+        userUuid: userUuid,
+      },
+      update: {
+        refreshToken: refreshToken,
+      },
+      create: {
+        userUuid: userUuid,
+        refreshToken: refreshToken
+      },
+    })
   }
 
 
