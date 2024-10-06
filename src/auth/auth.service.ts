@@ -44,13 +44,49 @@ export class AuthService {
 
   async signUp(dto: CreateAccountDto) {
     const hashedPassword = await this.hashPassword(dto.password);
+    
+    // create new user
     const newUser = await this.prisma.users.create({
       data: {
         email: dto.email,
         passwordHash: hashedPassword,
-        name: dto.name
+        name: dto.name,
+        profilePicture: dto.profilePicture,
+        phoneNumber: dto.phoneNumber,
+        bio: dto.bio
       },
     });
+
+    const regularPermissionUuid = await this.getRegularUserPermission()
+
+    // set user permission
+    await this.prisma.userPermissions.create({
+      data: {
+        userUuid: newUser.uuid,
+        permissionUuid: regularPermissionUuid
+      }
+    })
+
+    // auto fill user integration
+    await this.prisma.userIntegration.create({
+      data: {
+        userUuid: newUser.uuid,
+      }
+    })
+
+    // auto fill user security settings
+    await this.prisma.userSecuritySettings.create({
+      data: {
+        userUuid: newUser.uuid,
+      }
+    })
+
+    // auto fill notification settings
+    await this.prisma.userNotificationSettings.create({
+      data: {
+        userUuid: newUser.uuid,
+      }
+    })
 
     const tokens = await this.generateTokens(newUser.uuid, newUser.email);
     this.updateRefreshTokens(newUser.uuid, tokens.refresh_token);
@@ -136,4 +172,23 @@ export class AuthService {
       },
     });*/
   }
+
+
+
+
+  async getRegularUserPermission() {
+    const regularUser = await this.prisma.permissions.findFirst({
+      where: {
+        permission: "user"
+      },
+      select: {
+        uuid: true
+      }
+    })
+
+    return regularUser.uuid;
+  }
+
+
+
 }
