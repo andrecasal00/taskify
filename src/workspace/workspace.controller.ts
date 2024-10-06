@@ -28,7 +28,7 @@ export class WorkspaceController {
 
   @UseGuards(AccessTokenGuard)
   @Get()
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.OK)
   async getWorkspaces(
     @GetCurrentUserUuid() userUuid: string
   ) {
