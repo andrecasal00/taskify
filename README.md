@@ -49,3 +49,8 @@ $ npm run test:cov
 ### Database Design
 
 ![database](https://i.postimg.cc/hG3m4q27/taskify-drawio.png)
+
+
+### API Documentation
+
+http://localhost:3000/api/
