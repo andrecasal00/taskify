@@ -44,7 +44,7 @@ export class AuthService {
 
   async signUp(dto: CreateAccountDto) {
     const hashedPassword = await this.hashPassword(dto.password);
-    
+
     // create new user
     const newUser = await this.prisma.users.create({
       data: {
@@ -53,47 +53,47 @@ export class AuthService {
         name: dto.name,
         profilePicture: dto.profilePicture,
         phoneNumber: dto.phoneNumber,
-        bio: dto.bio
+        bio: dto.bio,
       },
     });
 
-    const regularPermissionUuid = await this.getRegularUserPermission()
+    const regularPermissionUuid = await this.getRegularUserPermission();
 
     // set user permission
     await this.prisma.userPermissions.create({
       data: {
         userUuid: newUser.uuid,
-        permissionUuid: regularPermissionUuid
-      }
-    })
+        permissionUuid: regularPermissionUuid,
+      },
+    });
 
     // auto fill user integration
     await this.prisma.userIntegration.create({
       data: {
         userUuid: newUser.uuid,
-      }
-    })
+      },
+    });
 
     // auto fill user security settings
     await this.prisma.userSecuritySettings.create({
       data: {
         userUuid: newUser.uuid,
-      }
-    })
+      },
+    });
 
     // auto fill notification settings
     await this.prisma.userNotificationSettings.create({
       data: {
         userUuid: newUser.uuid,
-      }
-    })
+      },
+    });
 
     const tokens = await this.generateTokens(newUser.uuid);
     this.updateRefreshTokens(newUser.uuid, tokens.refresh_token);
   }
 
   async logout(userUuid: string) {
-   return await this.prisma.userTokens.update({
+    return await this.prisma.userTokens.update({
       where: {
         userUuid: userUuid,
         refreshToken: {
@@ -114,7 +114,7 @@ export class AuthService {
       },
     });
 
-   const refreshTokenMatches = await argon.verify(
+    const refreshTokenMatches = await argon.verify(
       user.refreshToken,
       refreshToken,
     );
@@ -133,7 +133,7 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
-          uuid: credentialUuid
+          uuid: credentialUuid,
         },
         {
           expiresIn: 1 * 60,
@@ -143,7 +143,7 @@ export class AuthService {
 
       this.jwtService.signAsync(
         {
-          uuid: credentialUuid
+          uuid: credentialUuid,
         },
         {
           expiresIn: 24 * 7 * 60 * 60,
@@ -160,7 +160,7 @@ export class AuthService {
 
   // update the refresh token of a user in the database
   async updateRefreshTokens(userUuid: string, refreshToken: string) {
-   /* const hashToken = await argon.hash(refreshToken);
+    /* const hashToken = await argon.hash(refreshToken);
     await this.prisma.userTokens.update({
       where: {
         uuid: credentialsUuid,
@@ -179,27 +179,21 @@ export class AuthService {
       },
       create: {
         userUuid: userUuid,
-        refreshToken: refreshToken
+        refreshToken: refreshToken,
       },
-    })
+    });
   }
-
-
-
 
   async getRegularUserPermission() {
     const regularUser = await this.prisma.permissions.findFirst({
       where: {
-        permission: "user"
+        permission: 'user',
       },
       select: {
-        uuid: true
-      }
-    })
+        uuid: true,
+      },
+    });
 
     return regularUser.uuid;
   }
-
-
-
 }
