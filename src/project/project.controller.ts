@@ -31,7 +31,8 @@ export class ProjectController {
   @UseGuards(AccessTokenGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
-  async getProjects(@GetCurrentUserUuid() userUuid: string) {
-    return this.projectService.getUserProjects(userUuid);
+  async getProjects(@GetCurrentUserUuid() userUuid: string,
+  @Param("workspace_uuid") workspaceUuid,) {
+    return this.projectService.getUserProjects(userUuid, workspaceUuid);
   }
 }
