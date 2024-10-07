@@ -4,3 +4,7 @@ export class ProjectDto {
     visibilityUuid: string
     description: string
 }
+
+export class MemberDto {
+    email: string
+}

@@ -3,9 +3,12 @@ import {
   HttpStatus,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProjectDto } from './dto/project.dto';
+import { NotFoundError } from 'rxjs';
+import { permission } from 'process';
 
 @Injectable()
 export class ProjectService {
@@ -60,7 +63,8 @@ export class ProjectService {
 
       // get the projects where the user is a member of and not the owner
       const memberProjects = await this.prisma.$queryRaw`
-       SELECT tbl_projects.* FROM tbl_projects JOIN tbl_project_members ON tbl_projects.uuid = tbl_project_members.project_uuid WHERE tbl_project_members.uuid= ${userUuid}`;
+       SELECT tbl_workspaces.uuid, tbl_workspaces.name, tbl_projects.* FROM tbl_projects JOIN tbl_project_members ON tbl_projects.uuid = tbl_project_members.project_uuid 
+       JOIN tbl_workspaces ON tbl_workspaces.uuid = tbl_projects.workspace_uuid WHERE tbl_project_members.uuid= ${userUuid}`;
 
       return {
         status: HttpStatus.OK,
@@ -78,6 +82,45 @@ export class ProjectService {
     }
   }
 
+  // assuming that we are inside of the project page
+  async addMemberToProject(targetEmail: string, projectUuid: string) {
+    // searches if the email exists, if so adds to the project
+
+    // check if i'm the owner of the current project
+    console.log(`EMAIL: ${targetEmail}`)
+
+    const user = await this.prisma.users.findUnique({
+      where: {
+        email: targetEmail,
+      },
+      select: {
+        uuid: true
+      }
+    });
+
+    if (!user) {
+      throw new NotFoundException('Email not found');
+    } else {
+      const permission = await this.getMemberPermission();
+
+      console.log(`rato uuid: ${user.uuid}\nproject uuid: ${projectUuid}\npermission: ${permission}`)
+
+      // add to project member
+      const project = await this.prisma.projectMembers.create({
+        data: {
+          userUuid: user.uuid,
+          projectUuid: projectUuid,
+          permissionUuid: permission,
+        },
+      });
+
+      return {
+        status: HttpStatus.CREATED,
+        data: [project],
+      };
+    }
+  }
+
   async getPrivateVisibility() {
     const visibility = await this.prisma.projectVisibility.findFirst({
       where: {
@@ -89,5 +132,18 @@ export class ProjectService {
     });
 
     return visibility.uuid;
+  }
+
+  async getMemberPermission() {
+    const permission = await this.prisma.projectPermissions.findFirst({
+      where: {
+        name: 'member',
+      },
+      select: {
+        uuid: true,
+      },
+    });
+
+    return permission.uuid;
   }
 }
