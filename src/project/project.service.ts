@@ -61,15 +61,15 @@ export class ProjectService {
       SELECT tbl_projects.* FROM tbl_workspaces JOIN tbl_projects ON tbl_projects.workspace_uuid = tbl_workspaces.uuid WHERE tbl_workspaces.uuid=${workspaceUuid} 
       AND tbl_workspaces.owner_uuid = ${userUuid}`;
 
-      // get the projects where the user is a member of and not the owner
-      const memberProjects = await this.prisma.$queryRaw`
-       SELECT tbl_workspaces.uuid, tbl_workspaces.name, tbl_projects.* FROM tbl_projects JOIN tbl_project_members ON tbl_projects.uuid = tbl_project_members.project_uuid 
-       JOIN tbl_workspaces ON tbl_workspaces.uuid = tbl_projects.workspace_uuid WHERE tbl_project_members.uuid= ${userUuid}`;
+      const projectsMembership = await this.prisma
+      .$queryRaw`SELECT tbl_projects.* FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
+      JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid WHERE tbl_project_members.user_uuid = ${userUuid} AND tbl_projects.workspace_uuid = ${workspaceUuid}`;
+
 
       return {
         status: HttpStatus.OK,
         ownerProjects: [projects],
-        memberProjects: [memberProjects],
+        projectsMembership: [projectsMembership]
       };
     } catch (error) {
       if (error instanceof ForbiddenException) {
