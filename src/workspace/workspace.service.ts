@@ -1,5 +1,5 @@
 import {
-    ForbiddenException,
+  ForbiddenException,
   HttpStatus,
   Injectable,
   InternalServerErrorException,
@@ -47,22 +47,23 @@ export class WorkspaceService {
 
       const workspaces = await this.prisma.workspaces.findMany({
         where: {
-            ownerUuid: userUuid,
-            deletedAt: null
-        }
+          ownerUuid: userUuid,
+          deletedAt: null,
+        },
       });
 
-      if (workspaces.length === 0) {
-        return { status: HttpStatus.OK, data: "The user does not have workspaces!" };
-      }
+      const sharedWorkspaces = await this.prisma
+          .$queryRaw`SELECT tbl_workspaces.uuid, tbl_workspaces.name FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
+          JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid WHERE tbl_project_members.user_uuid = ${userUuid}`;
 
-      return { status: HttpStatus.OK, data: [workspaces] };
+
+      return { status: HttpStatus.OK, workspaces: [workspaces], sharedWorkspaces: [sharedWorkspaces] };
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
       }
 
-      console.log(error)
+      console.log(error);
 
       throw new InternalServerErrorException(
         'Failed to fetch projects due to an internal error',
