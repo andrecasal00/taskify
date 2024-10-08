@@ -91,57 +91,51 @@ export class ProjectService {
     projectUuid: string,
     ownerUuid: string,
   ) {
-    // searches if the email exists, if so adds to the project
-
-    // check if i'm the owner of the current project
+    // Step 1: Validate if the current user is the owner of the project
     const isProjectOwner = await this.isProjectOwner(ownerUuid, projectUuid);
-    console.log(`is project owner: ${isProjectOwner}`)
-
     if (Object.keys(isProjectOwner).length === 0) {
-      throw new ForbiddenException("You are not the owner of this project!")
+      throw new ForbiddenException('You are not the owner of this project!');
     }
 
-    // check if the user is valid
-
+    // Step 2: Check if the user with the target email exists
     const user = await this.prisma.users.findUnique({
-      where: {
-        email: targetEmail,
-      },
-      select: {
-        uuid: true,
-      },
+      where: { email: targetEmail },
+      select: { uuid: true },
     });
-
-     // check if that member is not already in the project
-     const isMemberInProject = await this.isMemberInProject(user.uuid, projectUuid);
-     console.log(`isMemberInProject: ${isMemberInProject}`)
-     if (Object.keys(isMemberInProject).length !== 0) {
-       throw new ConflictException("The member you are trying to associate is already in the current project!")
-     }
 
     if (!user) {
       throw new NotFoundException('Email not found');
-    } else {
-      const permission = await this.getMemberPermission();
-
-      console.log(
-        `rato uuid: ${user.uuid}\nproject uuid: ${projectUuid}\npermission: ${permission}`,
-      );
-
-      // add to project member
-      const project = await this.prisma.projectMembers.create({
-        data: {
-          userUuid: user.uuid,
-          projectUuid: projectUuid,
-          permissionUuid: permission,
-        },
-      });
-
-      return {
-        status: HttpStatus.CREATED,
-        data: [project],
-      };
     }
+
+    // Step 3: Check if the user is already a member of the project
+    const isMemberInProject = await this.isMemberInProject(
+      user.uuid,
+      projectUuid,
+    );
+    if (isMemberInProject.length > 0) {
+      throw new ConflictException(
+        'The member you are trying to associate is already in the current project!',
+      );
+    }
+
+    // Step 4: Get the user's permission
+    const permissionUuid = await this.getMemberPermission();
+
+    // Step 5: Add the user as a member to the project
+    const projectMember = await this.prisma.projectMembers.create({
+      data: {
+        userUuid: user.uuid,
+        projectUuid: projectUuid,
+        permissionUuid: permissionUuid,
+      },
+    });
+
+    // Step 6: Return success response
+    return {
+      status: HttpStatus.CREATED,
+      message: "The member was added with success!",
+      data: [projectMember],
+    };
   }
 
   async getPrivateVisibility() {
@@ -181,8 +175,8 @@ export class ProjectService {
     return this.prisma.projectMembers.findMany({
       where: {
         userUuid: uuid,
-        projectUuid: projectUuid
-      }
-    })
+        projectUuid: projectUuid,
+      },
+    });
   }
 }
