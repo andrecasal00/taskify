@@ -47,6 +47,6 @@ export class ProjectController {
     @Param('project_uuid') projectUuid,
   ) {
     console.log(`EMAIL : ${data.email}`)
-    return this.projectService.addMemberToProject(data.email, projectUuid);
+    return this.projectService.addMemberToProject(data.email, projectUuid, userUuid);
   }
 }
