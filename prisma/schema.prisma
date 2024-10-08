@@ -58,8 +58,8 @@ model UserPermissions {
   userUuid       String @map("user_uuid")
   permissionUuid String @map("permission_uuid")
 
-  users       Users       @relation(fields: [userUuid], references: [uuid])
-  permissions Permissions @relation(fields: [permissionUuid], references: [uuid])
+  users       Users       @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
+  permissions Permissions @relation(fields: [permissionUuid], references: [uuid], onDelete: Cascade)
 
   @@map("tbl_user_permissions")
 }
@@ -74,7 +74,7 @@ model UserTokens {
   ipAddress    String?  @map("ip_address")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  users Users @relation(fields: [userUuid], references: [uuid])
+  users Users @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
 
   @@map("tbl_user_tokens")
 }
@@ -87,7 +87,7 @@ model UserIntegration {
   details         String?
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  users Users @relation(fields: [userUuid], references: [uuid])
+  users Users @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
 
   @@map("tbl_user_integration")
 }
@@ -116,7 +116,7 @@ model UserNotificationSettings {
 
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  users Users @relation(fields: [userUuid], references: [uuid])
+  users Users @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
 
   @@map("tbl_user_notification_settings")
 }
@@ -131,7 +131,7 @@ model Workspaces {
   createdAt DateTime  @default(now()) @map("created_at")
   deletedAt DateTime? @map("deleted_at") @db.Timestamp()
 
-  users Users @relation(fields: [ownerUuid], references: [uuid])
+  users Users @relation(fields: [ownerUuid], references: [uuid], onDelete: Cascade)
 
   projects Projects[]
 
@@ -169,8 +169,8 @@ model Projects {
   createdAt DateTime  @default(now()) @map("created_at")
   deletedAt DateTime? @map("deleted_at") @db.Timestamp()
 
-  workspace         Workspaces        @relation(fields: [workspaceUuid], references: [uuid])
-  projectVisibility ProjectVisibility @relation(fields: [visibilityUuid], references: [uuid])
+  workspace         Workspaces        @relation(fields: [workspaceUuid], references: [uuid], onDelete: Cascade)
+  projectVisibility ProjectVisibility @relation(fields: [visibilityUuid], references: [uuid], onDelete: Cascade)
   projectMembers    ProjectMembers[]
   boards            Boards[]
 
@@ -186,9 +186,9 @@ model ProjectMembers {
   joinedAt  DateTime  @default(now()) @map("joined_at")
   removedAt DateTime? @map("removed_at") @db.Timestamp()
 
-  projects   Projects           @relation(fields: [projectUuid], references: [uuid])
-  users      Users              @relation(fields: [userUuid], references: [uuid])
-  permission ProjectPermissions @relation(fields: [permissionUuid], references: [uuid])
+  projects   Projects           @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
+  users      Users              @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
+  permission ProjectPermissions @relation(fields: [permissionUuid], references: [uuid], onDelete: Cascade)
 
   @@map("tbl_project_members")
 }
@@ -201,7 +201,7 @@ model Boards {
   createdAt DateTime  @default(now()) @map("created_at")
   deletedAt DateTime? @map("deleted_at") @db.Timestamp()
 
-  projects Projects @relation(fields: [projectUuid], references: [uuid])
+  projects Projects @relation(fields: [projectUuid], references: [uuid], onDelete: Cascade)
 
   tasks        Tasks[]
   chatMessages BoardChatMessages[]
@@ -222,7 +222,7 @@ model Tasks {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at") @db.Timestamp()
 
-  boards Boards @relation(fields: [boardUuid], references: [uuid])
+  boards Boards @relation(fields: [boardUuid], references: [uuid], onDelete: Cascade)
 
   taskMembers  TaskMembers[]
   taskComments TaskComments[]
@@ -238,8 +238,8 @@ model TaskMembers {
   joinedAt  DateTime  @default(now()) @map("joined_at")
   removedAt DateTime? @map("removed_at") @db.Timestamp()
 
-  tasks Tasks @relation(fields: [taksUuid], references: [uuid])
-  users Users @relation(fields: [associatedToUuid], references: [uuid])
+  tasks Tasks @relation(fields: [taksUuid], references: [uuid], onDelete: Cascade)
+  users Users @relation(fields: [associatedToUuid], references: [uuid], onDelete: Cascade)
 
   @@map("tbl_task_members")
 }
@@ -253,8 +253,8 @@ model TaskComments {
   createdAt DateTime  @default(now()) @map("created_at")
   removedAt DateTime? @map("removed_at") @db.Timestamp()
 
-  tasks Tasks @relation(fields: [taksUuid], references: [uuid])
-  users Users @relation(fields: [userUuid], references: [uuid])
+  tasks Tasks @relation(fields: [taksUuid], references: [uuid], onDelete: Cascade)
+  users Users @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
 
   @@map("tbl_task_comments")
 }
@@ -269,8 +269,8 @@ model BoardChatMessages {
   createdAt DateTime  @default(now()) @map("created_at")
   removedAt DateTime? @map("removed_at") @db.Timestamp()
 
-  tasks Boards @relation(fields: [boardUuid], references: [uuid])
-  users Users  @relation(fields: [userUuid], references: [uuid])
+  tasks Boards @relation(fields: [boardUuid], references: [uuid], onDelete: Cascade)
+  users Users  @relation(fields: [userUuid], references: [uuid], onDelete: Cascade)
 
   @@map("tbl_board_chat_messages")
 }

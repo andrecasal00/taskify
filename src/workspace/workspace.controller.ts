@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -33,5 +35,15 @@ export class WorkspaceController {
     @GetCurrentUserUuid() userUuid: string
   ) {
     return this.workspaceService.getUserWorkspaces(userUuid);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Delete('/:workspace_uuid')
+  @HttpCode(HttpStatus.OK)
+  async deleteWorkspaces(
+    @GetCurrentUserUuid() userUuid: string,
+    @Param('workspace_uuid') workspaceUuid: string
+  ) {
+    return this.workspaceService.deleteWorkpace(userUuid, workspaceUuid);
   }
 }
