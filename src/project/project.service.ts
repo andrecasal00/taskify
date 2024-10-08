@@ -85,6 +85,24 @@ export class ProjectService {
     }
   }
 
+  async deleteProject(projectUuid: string, userUuid: string) {
+    const isProjectOwner = await this.isProjectOwner(userUuid, projectUuid);
+    if (Object.keys(isProjectOwner).length === 0) {
+      throw new ForbiddenException('You are not the owner of this project!');
+    }
+
+    await this.prisma.projects.deleteMany({
+      where: {
+        uuid: projectUuid,
+      },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      message: 'The project was removed with success!'
+    };
+  }
+
   // assuming that we are inside of the project page
   async addMemberToProject(
     targetEmail: string,
@@ -133,8 +151,53 @@ export class ProjectService {
     // Step 6: Return success response
     return {
       status: HttpStatus.CREATED,
-      message: "The member was added with success!",
+      message: 'The member was added with success!',
       data: [projectMember],
+    };
+  }
+
+  async removeMemberFromProject(
+    targetEmail: string,
+    projectUuid: string,
+    ownerUuid: string,
+  ) {
+    // Step 1: Validate if the current user is the owner of the project
+    const isProjectOwner = await this.isProjectOwner(ownerUuid, projectUuid);
+    if (Object.keys(isProjectOwner).length === 0) {
+      throw new ForbiddenException('You are not the owner of this project!');
+    }
+
+    // Step 2: Check if the user with the target email exists
+    const user = await this.prisma.users.findUnique({
+      where: { email: targetEmail },
+      select: { uuid: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Email not found');
+    }
+
+    // Step 3: Check if the user is already a member of the project
+    const isMemberInProject = await this.isMemberInProject(
+      user.uuid,
+      projectUuid,
+    );
+    if (isMemberInProject.length > 0) {
+      await this.prisma.projectMembers.deleteMany({
+        where: {
+          userUuid: user.uuid,
+          projectUuid: projectUuid,
+        },
+      });
+    } else {
+      throw new ConflictException(
+        'That email is not a member of your project!',
+      );
+    }
+
+    return {
+      status: HttpStatus.OK,
+      message: 'The member was removed with success!',
     };
   }
 

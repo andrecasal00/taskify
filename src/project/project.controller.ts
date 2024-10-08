@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -39,7 +40,18 @@ export class ProjectController {
   }
 
   @UseGuards(AccessTokenGuard)
-  @Post('/:project_uuid')
+  @Delete('/:project_uuid')
+  @HttpCode(HttpStatus.CREATED)
+  async removeMemberFromProject(
+    @GetCurrentUserUuid() userUuid: string,
+    @Param('project_uuid') projectUuid,
+  ) {
+    return this.projectService.deleteProject(projectUuid, userUuid);
+  }
+}
+
+  @UseGuards(AccessTokenGuard)
+  @Post('/:project_uuid/membership')
   @HttpCode(HttpStatus.CREATED)
   async addMemberToProject(
     @GetCurrentUserUuid() userUuid: string,
@@ -48,5 +60,16 @@ export class ProjectController {
   ) {
     console.log(`EMAIL : ${data.email}`)
     return this.projectService.addMemberToProject(data.email, projectUuid, userUuid);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Delete('/:project_uuid/membership')
+  @HttpCode(HttpStatus.CREATED)
+  async removeMemberFromProject(
+    @GetCurrentUserUuid() userUuid: string,
+    @Body() data: MemberDto,
+    @Param('project_uuid') projectUuid,
+  ) {
+    return this.projectService.removeMemberFromProject(data.email, projectUuid, userUuid);
   }
 }
