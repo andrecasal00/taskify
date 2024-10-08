@@ -42,13 +42,12 @@ export class ProjectController {
   @UseGuards(AccessTokenGuard)
   @Delete('/:project_uuid')
   @HttpCode(HttpStatus.CREATED)
-  async removeMemberFromProject(
+  async deleteproject(
     @GetCurrentUserUuid() userUuid: string,
     @Param('project_uuid') projectUuid,
   ) {
     return this.projectService.deleteProject(projectUuid, userUuid);
   }
-}
 
   @UseGuards(AccessTokenGuard)
   @Post('/:project_uuid/membership')
