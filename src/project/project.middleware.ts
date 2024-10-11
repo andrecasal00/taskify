@@ -11,8 +11,12 @@ export class ProjectAccessMiddleware implements NestMiddleware {
     const userUuid = GetCurrentUserUuid().toString(); //req.user["uuid"]; // Assuming you've set user from JWT or session
     const { workspace_uuid, project_uuid } = req.params;
 
-    const request = req
-    console.log(`request: ${req.header}`)
+    const request = req.headers = {
+      ...req.headers,
+      Authorization: req.headers.Authorization || '',
+    };
+
+    console.log(`request header: ${request.authorization.replace('Bearer ', '')}`)
 
 
     console.log(`middleware: workspace uuid: ${workspace_uuid}\nproject uuid: ${project_uuid}`)
