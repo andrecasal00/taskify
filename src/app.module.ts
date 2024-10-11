@@ -6,9 +6,11 @@ import { SharedModule } from './shared/shared.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { ProjectModule } from './project/project.module';
+import { TaskModule } from './task/task.module';
+import { BoardModule } from './board/board.module';
 
 @Module({
-  imports: [AuthModule, SharedModule, PrismaModule, WorkspaceModule, ProjectModule],
+  imports: [AuthModule, SharedModule, PrismaModule, WorkspaceModule, ProjectModule, TaskModule, BoardModule],
   controllers: [AppController],
   providers: [AppService],
 })

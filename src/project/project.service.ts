@@ -21,8 +21,15 @@ export class ProjectService {
     userUuid: string,
     workspaceUuid: string,
     dto: ProjectDto,
+    req: Request
   ) {
-    try {
+    if (!req["project_access"].hasAccess) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return { status: HttpStatus.CREATED, data: "success" };
+
+    /* try {
       if (!userUuid) {
         throw new ForbiddenException();
       }
@@ -49,7 +56,7 @@ export class ProjectService {
       throw new InternalServerErrorException(
         'Failed to fetch projects due to an internal error',
       );
-    }
+    } */
   }
 
   async getUserProjects(userUuid: string, workspaceUuid: string) {

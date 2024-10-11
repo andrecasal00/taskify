@@ -14,7 +14,7 @@ import { AccessTokenGuard } from 'src/shared/guards';
 import { WorkspaceService } from './workspace.service';
 import { WorkspaceDto } from './dto/workspace.dto';
 
-@Controller('workspace')
+@Controller('workspace/')
 export class WorkspaceController {
   constructor(private workspaceService: WorkspaceService) {}
 

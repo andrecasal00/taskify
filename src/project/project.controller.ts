@@ -7,30 +7,34 @@ import {
   HttpStatus,
   Param,
   Post,
-  UseGuards,
+  Req,
+  UseGuards
 } from '@nestjs/common';
 import { GetCurrentUserUuid } from 'src/shared/decorators/current-user-uuid.decorator';
 import { AccessTokenGuard } from 'src/shared/guards';
 import { MemberDto, ProjectDto } from './dto/project.dto';
 import { ProjectService } from './project.service';
 
-@Controller(':workspace_uuid')
+//@Controller(':workspace_uuid')
+
+@Controller('workspace/:workspace_uuid/project/')
 export class ProjectController {
   constructor(private projectService: ProjectService) {}
 
   @UseGuards(AccessTokenGuard)
-  @Post('/project')
+  @Post()
   @HttpCode(HttpStatus.CREATED)
   async createProject(
     @GetCurrentUserUuid() userUuid: string,
     @Param('workspace_uuid') workspaceUuid,
     @Body() dto: ProjectDto,
+    @Req() req: Request
   ) {
-    return this.projectService.createProject(userUuid, workspaceUuid, dto);
+    return this.projectService.createProject(userUuid, workspaceUuid, dto, req);
   }
 
   @UseGuards(AccessTokenGuard)
-  @Get('/project')
+  @Get()
   @HttpCode(HttpStatus.OK)
   async getProjects(
     @GetCurrentUserUuid() userUuid: string,
