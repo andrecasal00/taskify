@@ -3,9 +3,10 @@ import { ProjectService } from './project.service';
 import { ProjectController } from './project.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { ProjectAccessMiddleware } from './project.middleware';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
-  providers: [ProjectService],
+  providers: [ProjectService, JwtService],
   controllers: [ProjectController],
   imports: [PrismaModule]
 })
