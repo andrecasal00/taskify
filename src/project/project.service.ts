@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   HttpStatus,
@@ -9,29 +8,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProjectDto } from './dto/project.dto';
-import { EMPTY, NotFoundError } from 'rxjs';
-import { permission } from 'process';
-import { empty } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class ProjectService {
   constructor(private prisma: PrismaService) {}
 
-  async createProject(
-    userUuid: string,
-    workspaceUuid: string,
-    dto: ProjectDto,
-    req: Request
-  ) {
-    if (!req["project_access"].hasAccess) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    return { status: HttpStatus.CREATED, data: "success" };
-
-    /* try {
-      if (!userUuid) {
-        throw new ForbiddenException();
+  async createProject(workspaceUuid: string, dto: ProjectDto, req: Request) {
+    try {
+      if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
+        throw new ForbiddenException('Access denied');
       }
 
       // get default private visibility
@@ -56,26 +41,20 @@ export class ProjectService {
       throw new InternalServerErrorException(
         'Failed to fetch projects due to an internal error',
       );
-    } */
+    }
   }
 
-  async getUserProjects(userUuid: string, workspaceUuid: string) {
+  async getUserProjects(workspaceUuid: string, req: Request) {
     // get all my projects + the projects where I'm a member
     try {
-      if (!userUuid) {
-        throw new ForbiddenException();
+      if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
+        throw new ForbiddenException('Access denied');
       }
 
       // getting all the projects of user workspace where is owner
       const projects = await this.prisma.$queryRaw`
       SELECT tbl_projects.* FROM tbl_workspaces JOIN tbl_projects ON tbl_projects.workspace_uuid = tbl_workspaces.uuid WHERE tbl_workspaces.uuid=${workspaceUuid} 
-      AND tbl_workspaces.owner_uuid = ${userUuid}`;
-
-      /*
-      const projectsMembership = await this.prisma
-      .$queryRaw`SELECT tbl_projects.* FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
-      JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid WHERE tbl_project_members.user_uuid = ${userUuid} AND tbl_projects.workspace_uuid = ${workspaceUuid}`;
-      */
+      AND tbl_workspaces.owner_uuid = ${req['project_access'].userUuid}`;
 
       return {
         status: HttpStatus.OK,
@@ -92,10 +71,14 @@ export class ProjectService {
     }
   }
 
-  async deleteProject(projectUuid: string, userUuid: string) {
-    const isProjectOwner = await this.isProjectOwner(userUuid, projectUuid);
+  async deleteProject(projectUuid: string, req: Request) {
+    /* const isProjectOwner = await this.isProjectOwner(userUuid, projectUuid);
     if (Object.keys(isProjectOwner).length === 0) {
       throw new ForbiddenException('You are not the owner of this project!');
+    } */
+
+    if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
+      throw new ForbiddenException('Access denied');
     }
 
     await this.prisma.projects.deleteMany({
@@ -106,7 +89,7 @@ export class ProjectService {
 
     return {
       status: HttpStatus.OK,
-      message: 'The project was removed with success!'
+      message: 'The project was removed with success!',
     };
   }
 
@@ -114,12 +97,18 @@ export class ProjectService {
   async addMemberToProject(
     targetEmail: string,
     projectUuid: string,
-    ownerUuid: string,
+    req: Request,
   ) {
     // Step 1: Validate if the current user is the owner of the project
-    const isProjectOwner = await this.isProjectOwner(ownerUuid, projectUuid);
+    /* const isProjectOwner = await this.isProjectOwner(ownerUuid, projectUuid);
     if (Object.keys(isProjectOwner).length === 0) {
       throw new ForbiddenException('You are not the owner of this project!');
+    } */
+
+    console.log(req['project_access']);
+
+    if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
+      throw new ForbiddenException('Access denied');
     }
 
     // Step 2: Check if the user with the target email exists
@@ -166,12 +155,16 @@ export class ProjectService {
   async removeMemberFromProject(
     targetEmail: string,
     projectUuid: string,
-    ownerUuid: string,
+    req: Request,
   ) {
     // Step 1: Validate if the current user is the owner of the project
-    const isProjectOwner = await this.isProjectOwner(ownerUuid, projectUuid);
+    /* const isProjectOwner = await this.isProjectOwner(ownerUuid, projectUuid);
     if (Object.keys(isProjectOwner).length === 0) {
       throw new ForbiddenException('You are not the owner of this project!');
+    } */
+
+    if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
+      throw new ForbiddenException('Access denied');
     }
 
     // Step 2: Check if the user with the target email exists

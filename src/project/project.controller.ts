@@ -10,7 +10,6 @@ import {
   Req,
   UseGuards
 } from '@nestjs/common';
-import { GetCurrentUserUuid } from 'src/shared/decorators/current-user-uuid.decorator';
 import { AccessTokenGuard } from 'src/shared/guards';
 import { MemberDto, ProjectDto } from './dto/project.dto';
 import { ProjectService } from './project.service';
@@ -25,54 +24,53 @@ export class ProjectController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createProject(
-    @GetCurrentUserUuid() userUuid: string,
     @Param('workspace_uuid') workspaceUuid,
     @Body() dto: ProjectDto,
     @Req() req: Request
   ) {
-    return this.projectService.createProject(userUuid, workspaceUuid, dto, req);
+    return this.projectService.createProject(workspaceUuid, dto, req);
   }
 
   @UseGuards(AccessTokenGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
   async getProjects(
-    @GetCurrentUserUuid() userUuid: string,
     @Param('workspace_uuid') workspaceUuid,
+    @Req() req: Request
   ) {
-    return this.projectService.getUserProjects(userUuid, workspaceUuid);
+    return this.projectService.getUserProjects(workspaceUuid, req);
   }
 
   @UseGuards(AccessTokenGuard)
   @Delete('/:project_uuid')
   @HttpCode(HttpStatus.CREATED)
   async deleteproject(
-    @GetCurrentUserUuid() userUuid: string,
     @Param('project_uuid') projectUuid,
+    @Req() req: Request
   ) {
-    return this.projectService.deleteProject(projectUuid, userUuid);
+    return this.projectService.deleteProject(projectUuid, req);
   }
 
   @UseGuards(AccessTokenGuard)
   @Post('/:project_uuid/membership')
   @HttpCode(HttpStatus.CREATED)
   async addMemberToProject(
-    @GetCurrentUserUuid() userUuid: string,
     @Body() data: MemberDto,
     @Param('project_uuid') projectUuid,
+    @Req() req: Request
   ) {
     console.log(`EMAIL : ${data.email}`)
-    return this.projectService.addMemberToProject(data.email, projectUuid, userUuid);
+    return this.projectService.addMemberToProject(data.email, projectUuid, req);
   }
 
   @UseGuards(AccessTokenGuard)
   @Delete('/:project_uuid/membership')
   @HttpCode(HttpStatus.CREATED)
   async removeMemberFromProject(
-    @GetCurrentUserUuid() userUuid: string,
     @Body() data: MemberDto,
     @Param('project_uuid') projectUuid,
+    @Req() req: Request
   ) {
-    return this.projectService.removeMemberFromProject(data.email, projectUuid, userUuid);
+    return this.projectService.removeMemberFromProject(data.email, projectUuid, req);
   }
 }

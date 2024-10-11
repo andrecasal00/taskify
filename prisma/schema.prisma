@@ -196,6 +196,7 @@ model ProjectMembers {
 model Boards {
   uuid            String  @id @default(uuid())
   projectUuid     String  @map("project_uuid")
+  name            String
   backgroundImage String? @map("background_image")
 
   createdAt DateTime  @default(now()) @map("created_at")

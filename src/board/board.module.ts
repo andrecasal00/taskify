@@ -1,11 +1,28 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { BoardService } from './board.service';
 import { BoardController } from './board.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { ProjectAccessMiddleware } from 'src/project/project.middleware';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   controllers: [BoardController],
-  providers: [BoardService],
-  imports: [PrismaModule]
+  providers: [BoardService, JwtService],
+  imports: [PrismaModule],
 })
-export class BoardModule {}
+export class BoardModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(ProjectAccessMiddleware)
+      .forRoutes(
+        {
+          path: 'workspace/:workspace_uuid/project/:project_uuid/board/',
+          method: RequestMethod.ALL,
+        },
+        {
+          path: 'workspace/:workspace_uuid/project/:project_uuid/board/:board_uuid',
+          method: RequestMethod.ALL,
+        },
+      );
+  }
+}

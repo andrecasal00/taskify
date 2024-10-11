@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { GetCurrentUserUuid } from 'src/shared/decorators/current-user-uuid.decorator';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
@@ -38,7 +37,7 @@ export class ProjectAccessMiddleware implements NestMiddleware {
       console.log("I'm entering here.");
 
       // User is the owner, grant access
-      req['project_access'] = { isOwner: true, hasAccess: true };
+      req['project_access'] = { isOwner: true, hasAccess: true, userUuid: userUuid };
       return next();
     }
 
@@ -55,7 +54,7 @@ export class ProjectAccessMiddleware implements NestMiddleware {
     }
 
     // User is a project member, grant access
-    req['project_access'] = { isOwner: false, hasAccess: true };
+    req['project_access'] = { isOwner: false, hasAccess: true, userUuid: userUuid };
     return next();
   }
 
