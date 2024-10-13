@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthDto, CreateAccountDto } from './dto/auth.dto';
@@ -90,6 +90,10 @@ export class AuthService {
 
     const tokens = await this.generateTokens(newUser.uuid);
     this.updateRefreshTokens(newUser.uuid, tokens.refresh_token);
+    return {
+      status: HttpStatus.CREATED,
+      data: "success"
+    };
   }
 
   async logout(userUuid: string) {
