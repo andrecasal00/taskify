@@ -137,7 +137,10 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.userUuid);
     await this.updateRefreshTokens(user.userUuid, tokens.refresh_token);
-    return tokens;
+    return {
+      status: HttpStatus.OK,
+      data: tokens
+    };
   }
 
   // @method = to generate new user tokens
