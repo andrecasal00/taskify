@@ -39,7 +39,11 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.uuid);
     await this.updateRefreshTokens(user.uuid, tokens.refresh_token);
-    return tokens;
+    
+    return {
+      status: HttpStatus.CREATED,
+      data: [tokens]
+    };
   }
 
   async signUp(dto: CreateAccountDto) {
