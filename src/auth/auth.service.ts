@@ -41,7 +41,7 @@ export class AuthService {
     await this.updateRefreshTokens(user.uuid, tokens.refresh_token);
     
     return {
-      status: HttpStatus.CREATED,
+      status: HttpStatus.OK,
       data: [tokens]
     };
   }
@@ -101,7 +101,7 @@ export class AuthService {
   }
 
   async logout(userUuid: string) {
-    return await this.prisma.userTokens.update({
+    const token = await this.prisma.userTokens.update({
       where: {
         userUuid: userUuid,
         refreshToken: {
@@ -112,6 +112,11 @@ export class AuthService {
         refreshToken: null,
       },
     });
+
+    return {
+      status: HttpStatus.OK,
+      data: token
+    };
   }
 
   // check if refresh token matches and generate new one
