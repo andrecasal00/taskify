@@ -12,7 +12,7 @@ import { AccessTokenStrategy, RefreshTokenStrategy } from 'src/shared/strategies
   controllers: [AuthController],
   imports: [PrismaModule, PassportModule, JwtModule.register({
     secret: jwtConstants.secretKey,
-    signOptions: {expiresIn: "60s"}
+    //signOptions: {expiresIn: "15m"}
   }),],
 })
 export class AuthModule {}

@@ -39,10 +39,10 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.uuid);
     await this.updateRefreshTokens(user.uuid, tokens.refresh_token);
-    
+
     return {
       status: HttpStatus.OK,
-      data: [tokens]
+      data: [tokens],
     };
   }
 
@@ -96,7 +96,7 @@ export class AuthService {
     this.updateRefreshTokens(newUser.uuid, tokens.refresh_token);
     return {
       status: HttpStatus.CREATED,
-      data: "success"
+      data: 'success',
     };
   }
 
@@ -115,32 +115,27 @@ export class AuthService {
 
     return {
       status: HttpStatus.OK,
-      data: token
+      data: token,
     };
   }
 
-  // check if refresh token matches and generate new one
-  async refreshTokens(userUuid: string, refreshToken: string) {
+  async refreshTokens(userUuid: string, rt: string) {
     const user = await this.prisma.userTokens.findUnique({
       where: {
         userUuid: userUuid,
       },
     });
 
-    const refreshTokenMatches = await argon.verify(
-      user.refreshToken,
-      refreshToken,
-    );
-    if (!refreshTokenMatches) {
-      throw new ForbiddenException('Access Denied');
-    }
+    if (!user || !user.refreshToken)
+      throw new ForbiddenException('1- Access Denied');
+
+    const rtMatches = await argon.verify(user.refreshToken, rt);
+    if (!rtMatches) throw new ForbiddenException('2- Access Denied');
 
     const tokens = await this.generateTokens(user.userUuid);
     await this.updateRefreshTokens(user.userUuid, tokens.refresh_token);
-    return {
-      status: HttpStatus.OK,
-      data: tokens
-    };
+
+    return tokens;
   }
 
   // @method = to generate new user tokens
@@ -152,7 +147,7 @@ export class AuthService {
           uuid: credentialUuid,
         },
         {
-          expiresIn: 1 * 60,
+          expiresIn: '15m',
           secret: jwtConstants.secretKey,
         },
       ),
@@ -162,7 +157,7 @@ export class AuthService {
           uuid: credentialUuid,
         },
         {
-          expiresIn: 24 * 7 * 60 * 60,
+          expiresIn: '7d',
           secret: jwtConstants.secretKey,
         },
       ),
@@ -176,26 +171,17 @@ export class AuthService {
 
   // update the refresh token of a user in the database
   async updateRefreshTokens(userUuid: string, refreshToken: string) {
-    /* const hashToken = await argon.hash(refreshToken);
-    await this.prisma.userTokens.update({
-      where: {
-        uuid: credentialsUuid,
-      },
-      data: {
-        refreshToken: hashToken,
-      },
-    }); */
-
+    const hashToken = await argon.hash(refreshToken);
     await this.prisma.userTokens.upsert({
       where: {
         userUuid: userUuid,
       },
       update: {
-        refreshToken: refreshToken,
+        refreshToken: hashToken,
       },
       create: {
         userUuid: userUuid,
-        refreshToken: refreshToken,
+        refreshToken: hashToken,
       },
     });
   }
