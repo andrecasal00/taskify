@@ -8,9 +8,10 @@ import { WorkspaceModule } from './workspace/workspace.module';
 import { ProjectModule } from './project/project.module';
 import { TaskModule } from './task/task.module';
 import { BoardModule } from './board/board.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [AuthModule, SharedModule, PrismaModule, WorkspaceModule, ProjectModule, TaskModule, BoardModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, SharedModule, PrismaModule, WorkspaceModule, ProjectModule, TaskModule, BoardModule],
   controllers: [AppController],
   providers: [AppService],
 })

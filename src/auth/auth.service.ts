@@ -1,16 +1,25 @@
-import { ForbiddenException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadGatewayException,
+  ForbiddenException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthDto, CreateAccountDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import * as argon from 'argon2';
 import { jwtConstants } from 'src/shared/constants';
+import { ConfigService } from '@nestjs/config';
+import { Console } from 'console';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
     private prisma: PrismaService,
+    private config: ConfigService,
   ) {}
 
   hashPassword(password: string) {
@@ -47,53 +56,70 @@ export class AuthService {
   }
 
   async signUp(dto: CreateAccountDto) {
-    const hashedPassword = await this.hashPassword(dto.password);
+    try {
+      const hashedPassword = await this.hashPassword(dto.password);
 
-    // create new user
-    const newUser = await this.prisma.users.create({
-      data: {
-        email: dto.email,
-        passwordHash: hashedPassword,
-        name: dto.name,
-        profilePicture: dto.profilePicture,
-        phoneNumber: dto.phoneNumber,
-        bio: dto.bio,
-      },
-    });
+      // create new user
+      const newUser = await this.prisma.users.create({
+        data: {
+          email: dto.email,
+          passwordHash: hashedPassword,
+          name: dto.name,
+          profilePicture: dto.profilePicture,
+          phoneNumber: dto.phoneNumber,
+          bio: dto.bio,
+        },
+      }).catch ((error)  => {
+        if (error instanceof PrismaClientKnownRequestError) {
+          if (error.code === 'P2002') {
+            throw new ForbiddenException('Email already in use.');
+          }
+        }
+        throw error;
+      });
 
-    const regularPermissionUuid = await this.getRegularUserPermission();
+      const regularPermissionUuid = await this.getRegularUserPermission();
 
-    // set user permission
-    await this.prisma.userPermissions.create({
-      data: {
-        userUuid: newUser.uuid,
-        permissionUuid: regularPermissionUuid,
-      },
-    });
+      // set user permission
+      await this.prisma.userPermissions.create({
+        data: {
+          userUuid: newUser.uuid,
+          permissionUuid: regularPermissionUuid,
+        },
+      });
 
-    // auto fill user integration
-    await this.prisma.userIntegration.create({
-      data: {
-        userUuid: newUser.uuid,
-      },
-    });
+      // auto fill user integration
+      await this.prisma.userIntegration.create({
+        data: {
+          userUuid: newUser.uuid,
+        },
+      });
 
-    // auto fill user security settings
-    await this.prisma.userSecuritySettings.create({
-      data: {
-        userUuid: newUser.uuid,
-      },
-    });
+      // auto fill user security settings
+      await this.prisma.userSecuritySettings.create({
+        data: {
+          userUuid: newUser.uuid,
+        },
+      });
 
-    // auto fill notification settings
-    await this.prisma.userNotificationSettings.create({
-      data: {
-        userUuid: newUser.uuid,
-      },
-    });
+      // auto fill notification settings
+      await this.prisma.userNotificationSettings.create({
+        data: {
+          userUuid: newUser.uuid,
+        },
+      });
 
-    const tokens = await this.generateTokens(newUser.uuid);
-    this.updateRefreshTokens(newUser.uuid, tokens.refresh_token);
+      const tokens = await this.generateTokens(newUser.uuid);
+      this.updateRefreshTokens(newUser.uuid, tokens.refresh_token);
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ForbiddenException('Credentials incorrect');
+        }
+      }
+      throw error;
+    }
+
     return {
       status: HttpStatus.CREATED,
       data: 'success',
@@ -101,17 +127,29 @@ export class AuthService {
   }
 
   async logout(userUuid: string) {
-    const token = await this.prisma.userTokens.update({
-      where: {
-        userUuid: userUuid,
-        refreshToken: {
-          not: null,
+    const token = await this.prisma.userTokens
+      .update({
+        where: {
+          userUuid: userUuid,
+          refreshToken: {
+            not: null,
+          },
         },
-      },
-      data: {
-        refreshToken: null,
-      },
-    });
+        data: {
+          refreshToken: null,
+        },
+      })
+      .catch((error) => {
+        if (error) {
+          console.log(error.code);
+          if (error.code === 'P2025') {
+            throw new BadGatewayException(
+              'Something went wrong! Probably you already did a logout!',
+            );
+          }
+        }
+        throw error;
+      });
 
     return {
       status: HttpStatus.OK,
@@ -127,10 +165,10 @@ export class AuthService {
     });
 
     if (!user || !user.refreshToken)
-      throw new ForbiddenException('1- Access Denied');
+      throw new ForbiddenException('Access Denied');
 
     const rtMatches = await argon.verify(user.refreshToken, rt);
-    if (!rtMatches) throw new ForbiddenException('2- Access Denied');
+    if (!rtMatches) throw new ForbiddenException('Access Denied');
 
     const tokens = await this.generateTokens(user.userUuid);
     await this.updateRefreshTokens(user.userUuid, tokens.refresh_token);
@@ -148,7 +186,7 @@ export class AuthService {
         },
         {
           expiresIn: '15m',
-          secret: jwtConstants.secretKey,
+          secret: this.config.get<string>('AT_SECRET'),
         },
       ),
 
@@ -158,7 +196,7 @@ export class AuthService {
         },
         {
           expiresIn: '7d',
-          secret: jwtConstants.secretKey,
+          secret: this.config.get<string>('RT_SECRET'),
         },
       ),
     ]);
