@@ -115,10 +115,8 @@ export class AuthService {
 
     return {
       status: HttpStatus.CREATED,
-      data: {
-        message: 'Account created successfully',
-        tokens,
-      },
+      message: 'Account created successfully',
+      data: tokens
     };
   }
 
