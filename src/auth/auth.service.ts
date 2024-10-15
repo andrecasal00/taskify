@@ -51,84 +51,80 @@ export class AuthService {
 
     return {
       status: HttpStatus.OK,
-      data: [tokens],
+      message: 'Login successful',
+      data: tokens,
     };
   }
 
   async signUp(dto: CreateAccountDto) {
-    try {
-      const hashedPassword = await this.hashPassword(dto.password);
+    const prisma = this.prisma;
+    var user = null;
 
-      // create new user
-      const newUser = await this.prisma.users.create({
-        data: {
-          email: dto.email,
-          passwordHash: hashedPassword,
-          name: dto.name,
-          profilePicture: dto.profilePicture,
-          phoneNumber: dto.phoneNumber,
-          bio: dto.bio,
-        },
-      }).catch ((error)  => {
+    // Use Prisma transaction to handle multiple DB operations atomically
+    await prisma.$transaction(async (tx) => {
+      try {
+        // Hash the password
+        const hashedPassword = await this.hashPassword(dto.password);
+
+        // Create new user
+        const newUser = await tx.users.create({
+          data: {
+            email: dto.email,
+            passwordHash: hashedPassword,
+            name: dto.name,
+            profilePicture: dto.profilePicture,
+            phoneNumber: dto.phoneNumber,
+            bio: dto.bio,
+          },
+        });
+
+        const regularPermissionUuid = await this.getRegularUserPermission();
+
+        // Create related entities concurrently where possible
+        await Promise.all([
+          tx.userPermissions.create({
+            data: {
+              userUuid: newUser.uuid,
+              permissionUuid: regularPermissionUuid,
+            },
+          }),
+          tx.userIntegration.create({
+            data: { userUuid: newUser.uuid },
+          }),
+          tx.userSecuritySettings.create({
+            data: { userUuid: newUser.uuid },
+          }),
+          tx.userNotificationSettings.create({
+            data: { userUuid: newUser.uuid },
+          }),
+        ]);
+
+        user = newUser;
+      } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
           if (error.code === 'P2002') {
             throw new ForbiddenException('Email already in use.');
           }
         }
         throw error;
-      });
-
-      const regularPermissionUuid = await this.getRegularUserPermission();
-
-      // set user permission
-      await this.prisma.userPermissions.create({
-        data: {
-          userUuid: newUser.uuid,
-          permissionUuid: regularPermissionUuid,
-        },
-      });
-
-      // auto fill user integration
-      await this.prisma.userIntegration.create({
-        data: {
-          userUuid: newUser.uuid,
-        },
-      });
-
-      // auto fill user security settings
-      await this.prisma.userSecuritySettings.create({
-        data: {
-          userUuid: newUser.uuid,
-        },
-      });
-
-      // auto fill notification settings
-      await this.prisma.userNotificationSettings.create({
-        data: {
-          userUuid: newUser.uuid,
-        },
-      });
-
-      const tokens = await this.generateTokens(newUser.uuid);
-      this.updateRefreshTokens(newUser.uuid, tokens.refresh_token);
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          throw new ForbiddenException('Credentials incorrect');
-        }
       }
-      throw error;
-    }
+    });
+
+    const tokens = await this.generateTokens(user.uuid);
+    await this.updateRefreshTokens(user.uuid, tokens.refresh_token);
 
     return {
       status: HttpStatus.CREATED,
-      data: 'success',
+      data: {
+        message: 'Account created successfully',
+        tokens,
+      },
     };
   }
 
   async logout(userUuid: string) {
-    const token = await this.prisma.userTokens
-      .update({
+    try {
+      const token = await this.prisma.userTokens.updateMany({
         where: {
           userUuid: userUuid,
           refreshToken: {
@@ -138,23 +134,30 @@ export class AuthService {
         data: {
           refreshToken: null,
         },
-      })
-      .catch((error) => {
-        if (error) {
-          console.log(error.code);
-          if (error.code === 'P2025') {
-            throw new BadGatewayException(
-              'Something went wrong! Probably you already did a logout!',
-            );
-          }
-        }
-        throw error;
       });
 
-    return {
-      status: HttpStatus.OK,
-      data: token,
-    };
+      if (token.count === 0) {
+        throw new BadGatewayException(
+          'User is already logged out or token not found.',
+        );
+      }
+
+      return {
+        status: HttpStatus.OK,
+        message: 'Logout successful',
+      };
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new BadGatewayException(
+          'User is already logged out or token not found.',
+        );
+      }
+
+      throw error;
+    }
   }
 
   async refreshTokens(userUuid: string, rt: string) {
@@ -176,8 +179,6 @@ export class AuthService {
     return tokens;
   }
 
-  // @method = to generate new user tokens
-  // @parameters = information that I want to put in the token
   async generateTokens(credentialUuid: string) {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
@@ -207,7 +208,6 @@ export class AuthService {
     };
   }
 
-  // update the refresh token of a user in the database
   async updateRefreshTokens(userUuid: string, refreshToken: string) {
     const hashToken = await argon.hash(refreshToken);
     await this.prisma.userTokens.upsert({
