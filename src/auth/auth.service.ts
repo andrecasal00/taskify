@@ -9,7 +9,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthDto, CreateAccountDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
 import * as argon from 'argon2';
-import { jwtConstants } from 'src/shared/constants';
 import { ConfigService } from '@nestjs/config';
 import { Console } from 'console';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
