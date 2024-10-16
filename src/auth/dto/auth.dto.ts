@@ -32,7 +32,7 @@ export class CreateAccountDto {
     profilePicture?: string; // Made optional
   
     @IsOptional()
-    @Matches(/^\+?[1-9]\d{1,14}$/, { message: 'Phone number must be a valid international format.' })
+    /*@Matches(/^\+?[1-9]\d{1,14}$/, { message: 'Phone number must be a valid international format.' })*/
     phoneNumber?: string; // Made optional, and added validation for phone numbers
   
     @IsOptional()
