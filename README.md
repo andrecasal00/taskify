@@ -35,7 +35,7 @@ $ docker-compose up -d
 ### 3. we need to migrate our prisma file
 
 ```bash
-$ npx prisma migrate dev --init
+$ npx prisma migrate dev
 ```
 
 ### 4. after the prisma migration, it is necessary to run the seed
