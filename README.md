@@ -15,7 +15,7 @@ This is a project that is under development with the purpose of making a project
 
 ## Installation Steps
 
-Before we begin it's necessary to have the Nest CLI installed previously. If you don't have it, install it by running the following command:
+⚠️ Before we begin it's necessary to have the Nest CLI installed previously. If you don't have it, install it by running the following command:
 ```bash
 $ npm i -g @nestjs/cli
 ```
