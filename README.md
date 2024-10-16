@@ -13,13 +13,33 @@
 
 This is a project that is under development with the purpose of making a project management easier.
 
-## Installation
+## Installation Steps
+
+### 1. it is necessary to install all the dependecies that this project uses
 
 ```bash
 $ npm install
 ```
 
-## Running the app
+### 2. it is necessary to run the docker-compose file
+
+```bash
+$ docker-compose up -d
+```
+
+### 3. we need to migrate our prisma file
+
+```bash
+$ npx prisma migrate dev --init
+```
+
+### 4. after the prisma migration, it is necessary to run the seed
+
+```bash
+$ npx prisma db seed
+```
+
+### 5. running the app
 
 ```bash
 # development
@@ -48,7 +68,7 @@ $ npm run test:cov
 
 ### Database Design
 
-![database](https://i.postimg.cc/hG3m4q27/taskify-drawio.png)
+![database](https://i.imgur.com/hoqwXYe.png)
 
 
 ### API Documentation
