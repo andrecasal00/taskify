@@ -17,8 +17,8 @@ export class CreateAccountDto {
   
     @IsNotEmpty()
     @IsString()
-    @MinLength(8, { message: 'Password must be at least 8 characters long.' })
-    /* @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
+    /*@MinLength(8, { message: 'Password must be at least 8 characters long.' })
+     @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
       message: 'Password must include upper and lower case letters, numbers, and special characters.',
     }) */
     password: string;
