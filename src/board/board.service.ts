@@ -30,7 +30,7 @@ export class BoardService {
         },
       });
       return {
-        status: HttpStatus.CREATED,
+        statusCode: HttpStatus.CREATED,
         data: [board],
       };
     } else {
@@ -51,7 +51,7 @@ export class BoardService {
       }
     });
     return {
-      status: HttpStatus.OK,
+      statusCode: HttpStatus.OK,
       data: [boards],
     };
   }
@@ -77,7 +77,7 @@ export class BoardService {
         }
       })
       return {
-        status: HttpStatus.OK,
+        statusCode: HttpStatus.OK,
         data: "Board was deleted with success.",
       };
     } else {

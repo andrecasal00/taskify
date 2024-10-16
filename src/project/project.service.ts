@@ -32,7 +32,7 @@ export class ProjectService {
         },
       });
 
-      return { status: HttpStatus.CREATED, data: [project] };
+      return { statusCode: HttpStatus.CREATED, data: [project] };
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
@@ -57,7 +57,7 @@ export class ProjectService {
       AND tbl_workspaces.owner_uuid = ${req['project_access'].userUuid}`;
 
       return {
-        status: HttpStatus.OK,
+        statusCode: HttpStatus.OK,
         ownerProjects: [projects],
       };
     } catch (error) {
@@ -88,7 +88,7 @@ export class ProjectService {
     });
 
     return {
-      status: HttpStatus.OK,
+      statusCode: HttpStatus.OK,
       message: 'The project was removed with success!',
     };
   }
@@ -146,7 +146,7 @@ export class ProjectService {
 
     // Step 6: Return success response
     return {
-      status: HttpStatus.CREATED,
+      statusCode: HttpStatus.CREATED,
       message: 'The member was added with success!',
       data: [projectMember],
     };
@@ -196,7 +196,7 @@ export class ProjectService {
     }
 
     return {
-      status: HttpStatus.OK,
+      statusCode: HttpStatus.OK,
       message: 'The member was removed with success!',
     };
   }

@@ -49,7 +49,7 @@ export class AuthService {
     await this.updateRefreshTokens(user.uuid, tokens.refresh_token);
 
     return {
-      status: HttpStatus.OK,
+      statusCode: HttpStatus.OK,
       message: 'Login successful',
       data: tokens,
     };
@@ -113,7 +113,7 @@ export class AuthService {
     await this.updateRefreshTokens(user.uuid, tokens.refresh_token);
 
     return {
-      status: HttpStatus.CREATED,
+      statusCode: HttpStatus.CREATED,
       message: 'Account created successfully',
       data: tokens
     };
@@ -140,7 +140,7 @@ export class AuthService {
       }
 
       return {
-        status: HttpStatus.OK,
+        statusCode: HttpStatus.OK,
         message: 'Logout successful',
       };
     } catch (error) {

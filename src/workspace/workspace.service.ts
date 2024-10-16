@@ -27,7 +27,7 @@ export class WorkspaceService {
         },
       });
 
-      return { status: HttpStatus.CREATED, data: [workspace] };
+      return { statusCode: HttpStatus.CREATED, data: [workspace] };
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
@@ -57,7 +57,7 @@ export class WorkspaceService {
           JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid WHERE tbl_project_members.user_uuid = ${userUuid}`;
 
       return {
-        status: HttpStatus.OK,
+        statusCode: HttpStatus.OK,
         workspaces: [workspaces],
         sharedWorkspaces: [sharedWorkspaces],
       };
@@ -98,7 +98,7 @@ export class WorkspaceService {
       })
 
       return {
-        status: HttpStatus.OK,
+        statusCode: HttpStatus.OK,
         message: 'Workspace was deleted successfuly!',
       };
     } catch (error) {
