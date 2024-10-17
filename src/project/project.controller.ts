@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Req,
   UseGuards
@@ -44,6 +45,16 @@ export class ProjectController {
     @Req() req: Request
   ) {
     return this.projectService.deleteProject(req);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Patch('/:project_uuid')
+  @HttpCode(HttpStatus.CREATED)
+  async updateProject(
+    @Body() dto: ProjectDto,
+    @Req() req: Request
+  ) {
+    return this.projectService.updateProject(dto, req);
   }
 
   @UseGuards(AccessTokenGuard)

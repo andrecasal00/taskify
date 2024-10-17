@@ -20,20 +20,23 @@ export class ProjectService {
         throw new ForbiddenException('Access denied');
       }
 
-      // get default private visibility
-      const visibilityUuid = await this.getPrivateVisibility();
+      if (req['project_access'].isOwner) {
+        // get default private visibility
+        const visibilityUuid = await this.getPrivateVisibility();
 
-      const project = await this.prisma.projects.create({
-        data: {
-          workspaceUuid: req['project_access'].workspaceUuid,
-          visibilityUuid: visibilityUuid,
-          name: dto.name,
-          backgroundImage: dto.backgroundImage,
-          description: dto.description,
-        },
-      });
-
-      return { statusCode: HttpStatus.CREATED, data: [project] };
+        const project = await this.prisma.projects.create({
+          data: {
+            workspaceUuid: req['project_access'].workspaceUuid,
+            visibilityUuid: visibilityUuid,
+            name: dto.name,
+            backgroundImage: dto.backgroundImage,
+            description: dto.description,
+          },
+        });
+        return { statusCode: HttpStatus.CREATED, data: project };
+      } else {
+        throw new ForbiddenException("You don't have permissions to create a project in this workspace.");
+      }      
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
@@ -98,6 +101,12 @@ export class ProjectService {
       statusCode: HttpStatus.OK,
       message: 'The project was removed with success!',
     };
+  }
+
+  async updateProject(dto: ProjectDto, req: Request) {
+    if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
+      throw new ForbiddenException('Access denied');
+    }
   }
 
   // assuming that we are inside of the project page
