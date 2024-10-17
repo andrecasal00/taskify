@@ -37,7 +37,7 @@ export class ProjectService {
       if (error instanceof ForbiddenException) {
         throw error;
       }
-
+      
       throw new InternalServerErrorException(
         'Failed to fetch projects due to an internal error',
       );
@@ -56,9 +56,18 @@ export class ProjectService {
       SELECT tbl_projects.* FROM tbl_workspaces JOIN tbl_projects ON tbl_projects.workspace_uuid = tbl_workspaces.uuid WHERE tbl_workspaces.uuid=${workspaceUuid} 
       AND tbl_workspaces.owner_uuid = ${req['project_access'].userUuid}`;
 
+      const memberProjects = await this.prisma.$queryRaw`
+      SELECT tbl_projects.* 
+      FROM tbl_project_members 
+      JOIN tbl_projects ON tbl_project_members.project_uuid = tbl_projects.uuid
+      JOIN tbl_workspaces ON tbl_projects.workspace_uuid = tbl_workspaces.uuid
+      WHERE tbl_workspaces.uuid = ${workspaceUuid}
+      AND tbl_project_members.user_uuid = ${req['project_access'].userUuid}`;
+
       return {
         statusCode: HttpStatus.OK,
-        ownerProjects: [projects],
+        ownerProjects: projects,
+        sharedProjects: memberProjects
       };
     } catch (error) {
       if (error instanceof ForbiddenException) {

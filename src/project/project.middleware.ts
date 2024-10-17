@@ -34,8 +34,6 @@ export class ProjectAccessMiddleware implements NestMiddleware {
 
     // Check if the user is the owner of the workspace
     if (workspace.ownerUuid === userUuid) {
-      console.log("I'm entering here.");
-
       // User is the owner, grant access
       req['project_access'] = { isOwner: true, hasAccess: true, userUuid: userUuid };
       return next();

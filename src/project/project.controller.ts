@@ -14,8 +14,6 @@ import { AccessTokenGuard } from 'src/shared/guards';
 import { MemberDto, ProjectDto } from './dto/project.dto';
 import { ProjectService } from './project.service';
 
-//@Controller(':workspace_uuid')
-
 @Controller('workspace/:workspace_uuid/project/')
 export class ProjectController {
   constructor(private projectService: ProjectService) {}
@@ -59,7 +57,6 @@ export class ProjectController {
     @Param('project_uuid') projectUuid,
     @Req() req: Request
   ) {
-    console.log(`EMAIL : ${data.email}`)
     return this.projectService.addMemberToProject(data.email, projectUuid, req);
   }
 
