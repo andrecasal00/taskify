@@ -14,7 +14,7 @@ import { title } from 'process';
 export class ProjectService {
   constructor(private prisma: PrismaService) { }
 
-  async createProject(workspaceUuid: string, dto: ProjectDto, req: Request) {
+  async createProject(dto: ProjectDto, req: Request) {
     try {
       if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
         throw new ForbiddenException('Access denied');
@@ -25,7 +25,7 @@ export class ProjectService {
 
       const project = await this.prisma.projects.create({
         data: {
-          workspaceUuid: workspaceUuid,
+          workspaceUuid: req['project_access'].workspaceUuid,
           visibilityUuid: visibilityUuid,
           name: dto.name,
           backgroundImage: dto.backgroundImage,
@@ -45,16 +45,18 @@ export class ProjectService {
     }
   }
 
-  async getUserProjects(workspaceUuid: string, req: Request) {
+  async getUserProjects(req: Request) {
     // get all my projects + the projects where I'm a member
     try {
       if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
         throw new ForbiddenException('Access denied');
       }
 
+      console.log(`getUserProjects: workspace_uuid: ${req['project_access'].workspaceUuid}`)
+
       // getting all the projects of user workspace where is owner
       const projects = await this.prisma.$queryRaw`
-      SELECT tbl_projects.* FROM tbl_workspaces JOIN tbl_projects ON tbl_projects.workspace_uuid = tbl_workspaces.uuid WHERE tbl_workspaces.uuid=${workspaceUuid} 
+      SELECT tbl_projects.* FROM tbl_workspaces JOIN tbl_projects ON tbl_projects.workspace_uuid = tbl_workspaces.uuid WHERE tbl_workspaces.uuid=${req['project_access'].workspaceUuid} 
       AND tbl_workspaces.owner_uuid = ${req['project_access'].userUuid}`;
 
       const memberProjects = await this.prisma.$queryRaw`
@@ -62,7 +64,7 @@ export class ProjectService {
       FROM tbl_project_members 
       JOIN tbl_projects ON tbl_project_members.project_uuid = tbl_projects.uuid
       JOIN tbl_workspaces ON tbl_projects.workspace_uuid = tbl_workspaces.uuid
-      WHERE tbl_workspaces.uuid = ${workspaceUuid}
+      WHERE tbl_workspaces.uuid = ${req['project_access'].workspaceUuid}
       AND tbl_project_members.user_uuid = ${req['project_access'].userUuid}`;
 
       return {
@@ -81,14 +83,14 @@ export class ProjectService {
     }
   }
 
-  async deleteProject(projectUuid: string, req: Request) {
+  async deleteProject(req: Request) {
     if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
       throw new ForbiddenException('Access denied');
     }
 
     await this.prisma.projects.deleteMany({
       where: {
-        uuid: projectUuid,
+        uuid: req['project_access'].projectUuid,
       },
     });
 
@@ -101,7 +103,6 @@ export class ProjectService {
   // assuming that we are inside of the project page
   async addMemberToProject(
     targetEmail: string,
-    projectUuid: string,
     req: Request,
   ) {
 
@@ -122,14 +123,14 @@ export class ProjectService {
         throw new NotFoundException('Email not found');
       }
 
-      if (this.isOwnerEmail(targetEmail)) {
+      if (await this.isOwnerEmail(targetEmail, req['project_access'].projectUuid)) {
         throw new ConflictException('You cannot add the owner of this project!');
       }
 
       // Step 4: Check if the user is already a member of the project
       const isMemberInProject = await this.isMemberInProject(
         user.uuid,
-        projectUuid,
+        req['project_access'].projectUuid,
       );
       if (isMemberInProject.length > 0) {
         throw new ConflictException(
@@ -144,7 +145,7 @@ export class ProjectService {
       const projectMember = await this.prisma.projectMembers.create({
         data: {
           userUuid: user.uuid,
-          projectUuid: projectUuid,
+          projectUuid: req['project_access'].projectUuid,
           permissionUuid: permissionUuid,
         },
       });
@@ -162,7 +163,6 @@ export class ProjectService {
 
   async removeMemberFromProject(
     targetEmail: string,
-    projectUuid: string,
     req: Request,
   ) {
     // Step 1: Validate if the current user is the owner of the project or has access
@@ -182,20 +182,20 @@ export class ProjectService {
         throw new NotFoundException('Email not found');
       }
 
-      if (this.isOwnerEmail(targetEmail)) {
+      if (await this.isOwnerEmail(targetEmail, req['project_access'].projectUuid)) {
         throw new ConflictException('You cannot remove the owner of this project!');
       }
 
       // Step 3: Check if the user is already a member of the project
       const isMemberInProject = await this.isMemberInProject(
         user.uuid,
-        projectUuid,
+        req['project_access'].projectUuid,
       );
       if (isMemberInProject.length > 0) {
         await this.prisma.projectMembers.deleteMany({
           where: {
             userUuid: user.uuid,
-            projectUuid: projectUuid,
+            projectUuid: req['project_access'].projectUuid,
           },
         });
       } else {
@@ -273,7 +273,9 @@ export class ProjectService {
     });
   }
 
-  async isOwnerEmail(email: string): Promise<boolean> {
+  async isOwnerEmail(email: string, projectUuid: string): Promise<boolean> {
+    console.log(`target email: ${email}`)
+
     // Step 1: Get the UUID of the user by their email
     const user = await this.prisma.users.findFirst({
       where: { email: email },
@@ -289,11 +291,11 @@ export class ProjectService {
 
     // Step 2: Check if the user is the owner of any workspace or project
     const isOwner = await this.prisma.$queryRaw`
-      SELECT tbl_workspaces.* 
-      FROM tbl_projects 
-      JOIN tbl_workspaces ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
-      WHERE tbl_workspaces.owner_uuid = ${userUuid}`;
+      SELECT tbl_workspaces.uuid FROM tbl_workspaces 
+      JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
+      WHERE tbl_workspaces.owner_uuid = ${userUuid} AND tbl_projects.uuid = ${projectUuid}`;
 
+      console.log(Array.isArray(isOwner) && isOwner.length > 0)
     // Step 3: Return true if the query returns any result, false otherwise
     return Array.isArray(isOwner) && isOwner.length > 0;
   }
@@ -307,8 +309,6 @@ export class ProjectService {
       throw new ForbiddenException('Access denied');
     }
 
-    console.log(`project uuid: ${req['project_access'].projectUuid}`)
-    
     const members = await this.prisma.projectMembers.findMany({
       where: {
         projectUuid: req['project_access'].projectUuid
