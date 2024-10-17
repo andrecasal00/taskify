@@ -8,10 +8,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProjectDto } from './dto/project.dto';
+import { title } from 'process';
 
 @Injectable()
 export class ProjectService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async createProject(workspaceUuid: string, dto: ProjectDto, req: Request) {
     try {
@@ -37,7 +38,7 @@ export class ProjectService {
       if (error instanceof ForbiddenException) {
         throw error;
       }
-      
+
       throw new InternalServerErrorException(
         'Failed to fetch projects due to an internal error',
       );
@@ -81,11 +82,6 @@ export class ProjectService {
   }
 
   async deleteProject(projectUuid: string, req: Request) {
-    /* const isProjectOwner = await this.isProjectOwner(userUuid, projectUuid);
-    if (Object.keys(isProjectOwner).length === 0) {
-      throw new ForbiddenException('You are not the owner of this project!');
-    } */
-
     if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
       throw new ForbiddenException('Access denied');
     }
@@ -108,57 +104,60 @@ export class ProjectService {
     projectUuid: string,
     req: Request,
   ) {
-    // Step 1: Validate if the current user is the owner of the project
-    /* const isProjectOwner = await this.isProjectOwner(ownerUuid, projectUuid);
-    if (Object.keys(isProjectOwner).length === 0) {
-      throw new ForbiddenException('You are not the owner of this project!');
-    } */
 
-    console.log(req['project_access']);
-
+    // Step 1: Validate if the current user is the owner of the project or has access
     if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
       throw new ForbiddenException('Access denied');
     }
 
-    // Step 2: Check if the user with the target email exists
-    const user = await this.prisma.users.findUnique({
-      where: { email: targetEmail },
-      select: { uuid: true },
-    });
+    // Step 2: Check if the user has permissions to add a member (owner or mod)
+    if (req['project_access'].isOwner || await this.isModMember(req['project_access'].userUuid)) {
+      // Step 3: Check if the user with the target email exists
+      const user = await this.prisma.users.findUnique({
+        where: { email: targetEmail },
+        select: { uuid: true },
+      });
 
-    if (!user) {
-      throw new NotFoundException('Email not found');
-    }
+      if (!user) {
+        throw new NotFoundException('Email not found');
+      }
 
-    // Step 3: Check if the user is already a member of the project
-    const isMemberInProject = await this.isMemberInProject(
-      user.uuid,
-      projectUuid,
-    );
-    if (isMemberInProject.length > 0) {
-      throw new ConflictException(
-        'The member you are trying to associate is already in the current project!',
+      if (this.isOwnerEmail(targetEmail)) {
+        throw new ConflictException('You cannot add the owner of this project!');
+      }
+
+      // Step 4: Check if the user is already a member of the project
+      const isMemberInProject = await this.isMemberInProject(
+        user.uuid,
+        projectUuid,
       );
+      if (isMemberInProject.length > 0) {
+        throw new ConflictException(
+          'The member you are trying to associate is already in the current project!',
+        );
+      }
+
+      // Step 5: Get the user's permission
+      const permissionUuid = await this.getMemberPermission();
+
+      // Step 6: Add the user as a member to the project
+      const projectMember = await this.prisma.projectMembers.create({
+        data: {
+          userUuid: user.uuid,
+          projectUuid: projectUuid,
+          permissionUuid: permissionUuid,
+        },
+      });
+
+      // Step 7: Return success response
+      return {
+        statusCode: HttpStatus.CREATED,
+        message: 'The member was added with success!',
+        data: projectMember,
+      };
+    } else {
+      throw new ForbiddenException("You don't have permissions to add a member.")
     }
-
-    // Step 4: Get the user's permission
-    const permissionUuid = await this.getMemberPermission();
-
-    // Step 5: Add the user as a member to the project
-    const projectMember = await this.prisma.projectMembers.create({
-      data: {
-        userUuid: user.uuid,
-        projectUuid: projectUuid,
-        permissionUuid: permissionUuid,
-      },
-    });
-
-    // Step 6: Return success response
-    return {
-      statusCode: HttpStatus.CREATED,
-      message: 'The member was added with success!',
-      data: [projectMember],
-    };
   }
 
   async removeMemberFromProject(
@@ -166,42 +165,46 @@ export class ProjectService {
     projectUuid: string,
     req: Request,
   ) {
-    // Step 1: Validate if the current user is the owner of the project
-    /* const isProjectOwner = await this.isProjectOwner(ownerUuid, projectUuid);
-    if (Object.keys(isProjectOwner).length === 0) {
-      throw new ForbiddenException('You are not the owner of this project!');
-    } */
-
+    // Step 1: Validate if the current user is the owner of the project or has access
     if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
       throw new ForbiddenException('Access denied');
     }
 
-    // Step 2: Check if the user with the target email exists
-    const user = await this.prisma.users.findUnique({
-      where: { email: targetEmail },
-      select: { uuid: true },
-    });
-
-    if (!user) {
-      throw new NotFoundException('Email not found');
-    }
-
-    // Step 3: Check if the user is already a member of the project
-    const isMemberInProject = await this.isMemberInProject(
-      user.uuid,
-      projectUuid,
-    );
-    if (isMemberInProject.length > 0) {
-      await this.prisma.projectMembers.deleteMany({
-        where: {
-          userUuid: user.uuid,
-          projectUuid: projectUuid,
-        },
+    // Step 2: Check if the user has permissions to remove a member (owner or mod)
+    if (req['project_access'].isOwner || await this.isModMember(req['project_access'].userUuid)) {
+      // Step 2: Check if the user with the target email exists
+      const user = await this.prisma.users.findUnique({
+        where: { email: targetEmail },
+        select: { uuid: true },
       });
-    } else {
-      throw new ConflictException(
-        'That email is not a member of your project!',
+
+      if (!user) {
+        throw new NotFoundException('Email not found');
+      }
+
+      if (this.isOwnerEmail(targetEmail)) {
+        throw new ConflictException('You cannot remove the owner of this project!');
+      }
+
+      // Step 3: Check if the user is already a member of the project
+      const isMemberInProject = await this.isMemberInProject(
+        user.uuid,
+        projectUuid,
       );
+      if (isMemberInProject.length > 0) {
+        await this.prisma.projectMembers.deleteMany({
+          where: {
+            userUuid: user.uuid,
+            projectUuid: projectUuid,
+          },
+        });
+      } else {
+        throw new ConflictException(
+          'That email is not a member of your project!',
+        );
+      }
+    } else {
+      throw new ForbiddenException("You don't have permissions to remove a member.")
     }
 
     return {
@@ -223,6 +226,31 @@ export class ProjectService {
     return visibility.uuid;
   }
 
+  async isModMember(userUuid: string) {
+    const permissionUuid = await this.getModPermission();
+    const hasPermissions = await this.prisma.projectMembers.findFirst({
+      where: {
+        userUuid: userUuid,
+        permissionUuid: permissionUuid
+      }
+    })
+    console.log(hasPermissions)
+    return hasPermissions !== null;
+  }
+
+  async getModPermission() {
+    const permission = await this.prisma.projectPermissions.findFirst({
+      where: {
+        name: 'mod',
+      },
+      select: {
+        uuid: true,
+      },
+    });
+
+    return permission.uuid;
+  }
+
   async getMemberPermission() {
     const permission = await this.prisma.projectPermissions.findFirst({
       where: {
@@ -236,13 +264,6 @@ export class ProjectService {
     return permission.uuid;
   }
 
-  async isProjectOwner(uuid: string, projectUuid: string) {
-    return this.prisma.$queryRaw`
-    SELECT * FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
-    WHERE tbl_workspaces.owner_uuid = ${uuid} AND tbl_projects.uuid = ${projectUuid}
-    `;
-  }
-
   async isMemberInProject(uuid: string, projectUuid: string) {
     return this.prisma.projectMembers.findMany({
       where: {
@@ -250,5 +271,61 @@ export class ProjectService {
         projectUuid: projectUuid,
       },
     });
+  }
+
+  async isOwnerEmail(email: string): Promise<boolean> {
+    // Step 1: Get the UUID of the user by their email
+    const user = await this.prisma.users.findFirst({
+      where: { email: email },
+      select: { uuid: true }, // Only select the UUID
+    });
+
+    // If no user is found by email, return false
+    if (!user) {
+      return false;
+    }
+
+    const userUuid = user.uuid;
+
+    // Step 2: Check if the user is the owner of any workspace or project
+    const isOwner = await this.prisma.$queryRaw`
+      SELECT tbl_workspaces.* 
+      FROM tbl_projects 
+      JOIN tbl_workspaces ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
+      WHERE tbl_workspaces.owner_uuid = ${userUuid}`;
+
+    // Step 3: Return true if the query returns any result, false otherwise
+    return Array.isArray(isOwner) && isOwner.length > 0;
+  }
+
+  async getProjectMembers(
+    req: Request,
+  ) {
+
+    // Step 1: Validate if the current user is the owner of the project or has access
+    if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    console.log(`project uuid: ${req['project_access'].projectUuid}`)
+    
+    const members = await this.prisma.projectMembers.findMany({
+      where: {
+        projectUuid: req['project_access'].projectUuid
+      },
+      include: {
+        users: {
+          select: {
+            name: true,
+            email: true
+          },
+        },
+      }
+    })
+
+    return {
+      statusCode: HttpStatus.OK,
+      data: members,
+    };
   }
 }

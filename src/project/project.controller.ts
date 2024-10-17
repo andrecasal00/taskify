@@ -70,4 +70,13 @@ export class ProjectController {
   ) {
     return this.projectService.removeMemberFromProject(data.email, projectUuid, req);
   }
+
+  @UseGuards(AccessTokenGuard)
+  @Get('/:project_uuid/members')
+  @HttpCode(HttpStatus.CREATED)
+  async getProjectMembers(
+    @Req() req: Request
+  ) {
+    return this.projectService.getProjectMembers(req);
+  }
 }

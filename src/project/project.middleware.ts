@@ -35,7 +35,7 @@ export class ProjectAccessMiddleware implements NestMiddleware {
     // Check if the user is the owner of the workspace
     if (workspace.ownerUuid === userUuid) {
       // User is the owner, grant access
-      req['project_access'] = { isOwner: true, hasAccess: true, userUuid: userUuid };
+      req['project_access'] = { isOwner: true, hasAccess: true, userUuid: userUuid, projectUuid: project_uuid };
       return next();
     }
 
@@ -52,7 +52,7 @@ export class ProjectAccessMiddleware implements NestMiddleware {
     }
 
     // User is a project member, grant access
-    req['project_access'] = { isOwner: false, hasAccess: true, userUuid: userUuid };
+    req['project_access'] = { isOwner: false, hasAccess: true, userUuid: userUuid, projectUuid: project_uuid };
     return next();
   }
 
