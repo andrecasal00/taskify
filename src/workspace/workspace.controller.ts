@@ -44,6 +44,6 @@ export class WorkspaceController {
     @GetCurrentUserUuid() userUuid: string,
     @Param('workspace_uuid') workspaceUuid: string
   ) {
-    return this.workspaceService.deleteWorkpace(userUuid, workspaceUuid);
+    return this.workspaceService.deleteWorkspace(userUuid, workspaceUuid);
   }
 }
