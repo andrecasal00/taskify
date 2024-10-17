@@ -104,8 +104,37 @@ export class ProjectService {
   }
 
   async updateProject(dto: ProjectDto, req: Request) {
-    if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
-      throw new ForbiddenException('Access denied');
+    try {
+      if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
+        throw new ForbiddenException('Access denied');
+      }
+      
+      if (req['project_access'].isOwner) {
+        const visibilityUuid = await this.getPrivateVisibility();
+        
+        const project = await this.prisma.projects.update({
+          where: {
+            uuid: req['project_access'].projectUuid,
+          },
+          data: {
+            visibilityUuid: visibilityUuid,
+            name: dto.name,
+            backgroundImage: dto.backgroundImage,
+            description: dto.description,
+          }
+        })
+        return { statusCode: HttpStatus.OK, data: project };
+      } else {
+        throw new ForbiddenException("You don't have permissions to create a project in this workspace.");
+      }
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      console.log(error)
+      throw new InternalServerErrorException(
+        'Failed to patch the project due to an internal error',
+      );
     }
   }
 
