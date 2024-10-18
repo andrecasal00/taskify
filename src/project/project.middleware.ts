@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NestMiddleware,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -21,6 +22,9 @@ export class ProjectAccessMiddleware implements NestMiddleware {
     const token = this.extractTokenFromHeader(req); // Assuming you've set user from JWT or session
 
     const decodedToken = this.jwtService.decode(token);
+    if (!decodedToken) {
+      throw new UnauthorizedException('Token is missing or invalid');
+    }
     const userUuid = decodedToken.uuid;
 
     // Check if the user is the owner of the workspace
