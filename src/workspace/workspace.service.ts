@@ -8,6 +8,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import { WorkspaceDto } from './dto/workspace.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Projects } from '@prisma/client';
 
 @Injectable()
 export class WorkspaceService {
@@ -57,7 +58,7 @@ export class WorkspaceService {
       });
 
       // Fetch shared workspaces via raw query
-      const sharedWorkspaces = await this.prisma.$queryRaw`
+      var sharedWorkspaces = await this.prisma.$queryRaw<Projects[]>`
         SELECT tbl_workspaces.uuid, tbl_workspaces.name 
         FROM tbl_workspaces 
         JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid
@@ -71,11 +72,31 @@ export class WorkspaceService {
         GROUP BY tbl_workspaces.uuid
       `;
 
-      console.log(`numberOfMembers: ${workspacesWithMembers[0].total}\nworkspace: ${workspacesWithMembers[0].uuid}`)
+      const sharedWorkspacesWithMembers: Array<{ total: number, uuid: string;  }> = await this.prisma.$queryRaw`
+        SELECT COUNT(tbl_project_members.user_uuid) AS total, tbl_workspaces.uuid AS uuid FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
+        JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid WHERE tbl_project_members.project_uuid = tbl_projects.uuid
+        GROUP BY tbl_workspaces.uuid
+      `;
+
+      //console.log(`numberOfMembers: ${workspacesWithMembers[0].total}\nworkspace: ${workspacesWithMembers[0].uuid}`)
 
       workspaces = workspaces.map((workspace) => {
         let totalOfMembers = 0;
         workspacesWithMembers.forEach((data) => {
+          if (data.uuid === workspace.uuid) {
+            totalOfMembers = Number(data.total);
+          }
+        });
+  
+        return {
+          ...workspace,
+          totalOfMembers,
+        };
+      });
+
+      sharedWorkspaces = sharedWorkspaces.map((workspace) => {
+        let totalOfMembers = 0;
+        sharedWorkspacesWithMembers.forEach((data) => {
           if (data.uuid === workspace.uuid) {
             totalOfMembers = Number(data.total);
           }

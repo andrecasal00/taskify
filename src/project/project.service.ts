@@ -42,8 +42,10 @@ export class ProjectService {
         throw error;
       }
 
+      console.log(error)
+
       throw new InternalServerErrorException(
-        'Failed to fetch projects due to an internal error',
+        'Failed to create projects due to an internal error',
       );
     }
   }
