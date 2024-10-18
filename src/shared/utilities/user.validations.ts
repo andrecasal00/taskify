@@ -29,4 +29,31 @@ export class UserValidations {
 
         return permission.uuid;
     }
+
+    async getGuestPermission() {
+        const permission = await this.prisma.projectPermissions.findFirst({
+            where: {
+                name: 'guest',
+            },
+            select: {
+                uuid: true,
+            },
+        });
+
+        return permission.uuid;
+    }
+
+    async isNotGuestMember(userUuid: string) {
+        const permissionUuid = await this.getGuestPermission();
+        const hasPermissions = await this.prisma.projectMembers.findFirst({
+            where: {
+                userUuid: userUuid,
+                permissionUuid: {
+                    not: permissionUuid
+                }
+            }
+        })
+        console.log(hasPermissions)
+        return hasPermissions !== null;
+    }
 }
