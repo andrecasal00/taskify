@@ -70,6 +70,9 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+### Workflow
+
+![workflow](https://i.postimg.cc/bwHjb2FL/taskify-workflow.png)
 
 ### Database Design
 

@@ -24,12 +24,10 @@ export class BoardController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createBoard(
-    @Param('workspace_uuid') workspaceUuid,
-    @Param('project_uuid') projectUuid,
     @Body() dto: BoardDto,
     @Req() req,
   ) {
-    return this.boardService.createBoard(projectUuid, dto, req);
+    return this.boardService.createBoard(dto, req);
   }
 
   // delete a board
@@ -37,18 +35,17 @@ export class BoardController {
   @Delete('/:board_uuid')
   @HttpCode(HttpStatus.OK)
   async deleteBoard(
-    @Param('project_uuid') projectUuid,
     @Param('board_uuid') boardUuid,
     @Req() req
   ) {
-    return this.boardService.deleteBoard(projectUuid, boardUuid, req);
+    return this.boardService.deleteBoard(boardUuid, req);
   }
 
   // get boards
   @UseGuards(AccessTokenGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
-  async getBoards(@Param('project_uuid') projectUuid, @Req() req) {
-    return this.boardService.getBoards(projectUuid, req);
+  async getBoards(@Req() req) {
+    return this.boardService.getBoards(req);
   }
 }

@@ -7,7 +7,7 @@ import { empty } from '@prisma/client/runtime/library';
 export class BoardService {
   constructor(private prisma: PrismaService) {}
 
-  async createBoard(projectUuid: string, dto: BoardDto, req: Request) {
+  async createBoard(dto: BoardDto, req: Request) {
     // everyone with access can create a board
 
     if (!req['project_access'].hasAccess) {
@@ -18,13 +18,13 @@ export class BoardService {
 
     const userPermission = await this.checkUserPermission(
       userUuid,
-      projectUuid,
+      req['project_access'].projectUuid,
     );
 
     if (userPermission === 'mod' || !req['project_access'].isOwner) {
       const board = await this.prisma.boards.create({
         data: {
-          projectUuid: projectUuid,
+          projectUuid: req['project_access'].projectUuid,
           name: dto.name,
           backgroundImage: dto.backgroundImage,
         },
@@ -40,14 +40,14 @@ export class BoardService {
     }
   }
 
-  async getBoards(projectUuid: string, req: Request) {
+  async getBoards(req: Request) {
     if (!req['project_access'].hasAccess) {
       throw new ForbiddenException('Access denied');
     }
 
     const boards = await this.prisma.boards.findMany({
       where: {
-        projectUuid: projectUuid
+        projectUuid: req['project_access'].projectUuid
       }
     });
     return {
@@ -56,7 +56,7 @@ export class BoardService {
     };
   }
 
-  async deleteBoard(projectUuid: string, boardUuid: string, req: Request) {
+  async deleteBoard(boardUuid: string, req: Request) {
     // everyone with access can create a board
 
     if (!req['project_access'].hasAccess) {
@@ -67,7 +67,7 @@ export class BoardService {
 
     const userPermission = await this.checkUserPermission(
       userUuid,
-      projectUuid,
+      req['project_access'].projectUuid,
     );
 
     if (userPermission === 'mod') {
