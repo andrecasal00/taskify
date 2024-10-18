@@ -49,7 +49,7 @@ export class WorkspaceService {
     this.validateUser(userUuid);
 
     try {
-      const workspaces = await this.prisma.workspaces.findMany({
+      var workspaces = await this.prisma.workspaces.findMany({
         where: {
           ownerUuid: userUuid,
           deletedAt: null,
@@ -64,6 +64,28 @@ export class WorkspaceService {
         JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid 
         WHERE tbl_project_members.user_uuid = ${userUuid}
       `;
+
+      const workspacesWithMembers: Array<{ total: number, uuid: string;  }> = await this.prisma.$queryRaw`
+        SELECT COUNT(tbl_project_members.user_uuid) AS total, tbl_workspaces.uuid AS uuid FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
+        JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid WHERE tbl_workspaces.owner_uuid = ${userUuid}
+        GROUP BY tbl_workspaces.uuid
+      `;
+
+      console.log(`numberOfMembers: ${workspacesWithMembers[0].total}\nworkspace: ${workspacesWithMembers[0].uuid}`)
+
+      workspaces = workspaces.map((workspace) => {
+        let totalOfMembers = 0;
+        workspacesWithMembers.forEach((data) => {
+          if (data.uuid === workspace.uuid) {
+            totalOfMembers = Number(data.total);
+          }
+        });
+  
+        return {
+          ...workspace,
+          totalOfMembers,
+        };
+      });
 
       return {
         statusCode: HttpStatus.OK,
