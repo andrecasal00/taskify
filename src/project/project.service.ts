@@ -161,12 +161,12 @@ export class ProjectService {
         throw new NotFoundException('Email not found');
       }
 
-      if (await this.isOwnerEmail(targetEmail, req['project_access'].projectUuid)) {
+      if (await this.userValidations.isOwnerEmail(targetEmail, req['project_access'].projectUuid)) {
         throw new ConflictException('You cannot add the owner of this project!');
       }
 
       // Step 4: Check if the user is already a member of the project
-      const isMemberInProject = await this.isMemberInProject(
+      const isMemberInProject = await this.userValidations.isMemberInProject(
         user.uuid,
         req['project_access'].projectUuid,
       );
@@ -177,7 +177,7 @@ export class ProjectService {
       }
 
       // Step 5: Get the user's permission
-      const permissionUuid = await this.getMemberPermission();
+      const permissionUuid = await this.userValidations.getMemberPermission();
 
       // Step 6: Add the user as a member to the project
       const projectMember = await this.prisma.projectMembers.create({
@@ -220,12 +220,12 @@ export class ProjectService {
         throw new NotFoundException('Email not found');
       }
 
-      if (await this.isOwnerEmail(targetEmail, req['project_access'].projectUuid)) {
+      if (await this.userValidations.isOwnerEmail(targetEmail, req['project_access'].projectUuid)) {
         throw new ConflictException('You cannot remove the owner of this project!');
       }
 
       // Step 3: Check if the user is already a member of the project
-      const isMemberInProject = await this.isMemberInProject(
+      const isMemberInProject = await this.userValidations.isMemberInProject(
         user.uuid,
         req['project_access'].projectUuid,
       );
@@ -262,55 +262,6 @@ export class ProjectService {
     });
 
     return visibility.uuid;
-  }
-
-  async getMemberPermission() {
-    const permission = await this.prisma.projectPermissions.findFirst({
-      where: {
-        name: 'member',
-      },
-      select: {
-        uuid: true,
-      },
-    });
-
-    return permission.uuid;
-  }
-
-  async isMemberInProject(uuid: string, projectUuid: string) {
-    return this.prisma.projectMembers.findMany({
-      where: {
-        userUuid: uuid,
-        projectUuid: projectUuid,
-      },
-    });
-  }
-
-  async isOwnerEmail(email: string, projectUuid: string): Promise<boolean> {
-    console.log(`target email: ${email}`)
-
-    // Step 1: Get the UUID of the user by their email
-    const user = await this.prisma.users.findFirst({
-      where: { email: email },
-      select: { uuid: true }, // Only select the UUID
-    });
-
-    // If no user is found by email, return false
-    if (!user) {
-      return false;
-    }
-
-    const userUuid = user.uuid;
-
-    // Step 2: Check if the user is the owner of any workspace or project
-    const isOwner = await this.prisma.$queryRaw`
-      SELECT tbl_workspaces.uuid FROM tbl_workspaces 
-      JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
-      WHERE tbl_workspaces.owner_uuid = ${userUuid} AND tbl_projects.uuid = ${projectUuid}`;
-
-      console.log(Array.isArray(isOwner) && isOwner.length > 0)
-    // Step 3: Return true if the query returns any result, false otherwise
-    return Array.isArray(isOwner) && isOwner.length > 0;
   }
 
   async getProjectMembers(

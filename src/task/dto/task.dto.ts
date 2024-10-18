@@ -1,4 +1,4 @@
-import { IsDateString, IsNotEmpty, IsOptional, IsString } from "class-validator"
+import { IsDateString, IsEmail, IsNotEmpty, IsOptional, IsString } from "class-validator"
 
 export class TaskDto {
     @IsNotEmpty()
@@ -16,4 +16,10 @@ export class TaskDto {
     @IsOptional()
     @IsString()
     tagsList: Array<string>
+}
+
+export class associateToTaskDto {
+    @IsNotEmpty()
+    @IsEmail()
+    email: string
 }

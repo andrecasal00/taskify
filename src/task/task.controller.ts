@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { AccessTokenGuard } from 'src/shared/guards';
-import { TaskDto } from './dto/task.dto';
+import { associateToTaskDto, TaskDto } from './dto/task.dto';
 
 @Controller('workspace/:workspace_uuid/project/:project_uuid/board/:board_uuid/task/')
 export class TaskController {
@@ -49,5 +49,27 @@ export class TaskController {
         @Req() req,
     ) {
         return this.taskService.updateTask(taskUuid, dto, req);
+    }
+
+    @UseGuards(AccessTokenGuard)
+    @Post(':task_uuid/member')
+    @HttpCode(HttpStatus.OK)
+    async associateMemberToTask(
+        @Param('task_uuid') taskUuid: string,
+        @Body() dto: associateToTaskDto,
+        @Req() req,
+    ) {
+        return this.taskService.associateMemberToTask(dto.email, taskUuid, req);
+    }
+
+    @UseGuards(AccessTokenGuard)
+    @Delete(':task_uuid/member')
+    @HttpCode(HttpStatus.OK)
+    async removeMemberFromTask(
+        @Param('task_uuid') taskUuid: string,
+        @Body() dto: associateToTaskDto,
+        @Req() req,
+    ) {
+        return this.taskService.removeMemberFromTask(dto.email, taskUuid, req);
     }
 }
