@@ -17,7 +17,9 @@ export class BoardService {
 
     const userUuid = req['project_access'].userUuid;
 
-    if (this.userValidations.isModMember(userUuid) || req['project_access'].isOwner) {
+    console.log(`modMember?: ${(await this.userValidations.isModMember(userUuid)).valueOf()}`)
+
+    if ((await this.userValidations.isModMember(userUuid)).valueOf() || req['project_access'].isOwner) {
       const board = await this.prisma.boards.create({
         data: {
           projectUuid: req['project_access'].projectUuid,
@@ -72,7 +74,7 @@ export class BoardService {
 
     const userUuid = req['project_access'].userUuid;
 
-    if (this.userValidations.isModMember(userUuid) || req['project_access'].isOwner) {
+    if ((await this.userValidations.isModMember(userUuid)).valueOf() || req['project_access'].isOwner) {
       await this.prisma.boards.deleteMany({
         where: {
           uuid: boardUuid
@@ -85,6 +87,31 @@ export class BoardService {
     } else {
       throw new ForbiddenException(
         "You don't have permissions to delete a board!",
+      );
+    }
+  }
+
+  async updateBoard(boardUuid: string, req: Request, dto: BoardDto) {
+    if (!req['project_access'].hasAccess) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const userUuid = req['project_access'].userUuid;
+
+    if ((await this.userValidations.isModMember(userUuid)).valueOf() || req['project_access'].isOwner) {
+      await this.prisma.boards.update({
+        where: {
+          uuid: boardUuid
+        },
+        data: dto
+      })
+      return {
+        statusCode: HttpStatus.OK,
+        data: "Board updated with success",
+      };
+    } else {
+      throw new ForbiddenException(
+        "You don't have permissions to update this board!",
       );
     }
   }

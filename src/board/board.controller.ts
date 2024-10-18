@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -38,6 +39,18 @@ export class BoardController {
     @Req() req
   ) {
     return this.boardService.deleteBoard(boardUuid, req);
+  }
+
+  // update a board
+  @UseGuards(AccessTokenGuard)
+  @Patch('/:board_uuid')
+  @HttpCode(HttpStatus.OK)
+  async updateBoard(
+    @Param('board_uuid') boardUuid,
+    @Req() req,
+    @Body() dto: BoardDto
+  ) {
+    return this.boardService.updateBoard(boardUuid, req, dto);
   }
 
   // get boards

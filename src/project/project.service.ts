@@ -150,7 +150,7 @@ export class ProjectService {
     }
 
     // Step 2: Check if the user has permissions to add a member (owner or mod)
-    if (req['project_access'].isOwner || await this.userValidations.isModMember(req['project_access'].userUuid)) {
+    if (req['project_access'].isOwner || await this.userValidations.isModMember(req['project_access'].userUuid).valueOf()) {
       // Step 3: Check if the user with the target email exists
       const user = await this.prisma.users.findUnique({
         where: { email: targetEmail },
@@ -209,7 +209,7 @@ export class ProjectService {
     }
 
     // Step 2: Check if the user has permissions to remove a member (owner or mod)
-    if (req['project_access'].isOwner || await this.userValidations.isModMember(req['project_access'].userUuid)) {
+    if (req['project_access'].isOwner || await this.userValidations.isModMember(req['project_access'].userUuid).valueOf()) {
       // Step 2: Check if the user with the target email exists
       const user = await this.prisma.users.findUnique({
         where: { email: targetEmail },
