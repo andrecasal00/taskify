@@ -8,11 +8,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProjectDto } from './dto/project.dto';
-import { title } from 'process';
+import { UserValidations } from 'src/shared/utilities/user.validations';
 
 @Injectable()
 export class ProjectService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService, private userValidations: UserValidations) { }
 
   async createProject(dto: ProjectDto, req: Request) {
     try {
@@ -150,7 +150,7 @@ export class ProjectService {
     }
 
     // Step 2: Check if the user has permissions to add a member (owner or mod)
-    if (req['project_access'].isOwner || await this.isModMember(req['project_access'].userUuid)) {
+    if (req['project_access'].isOwner || await this.userValidations.isModMember(req['project_access'].userUuid)) {
       // Step 3: Check if the user with the target email exists
       const user = await this.prisma.users.findUnique({
         where: { email: targetEmail },
@@ -209,7 +209,7 @@ export class ProjectService {
     }
 
     // Step 2: Check if the user has permissions to remove a member (owner or mod)
-    if (req['project_access'].isOwner || await this.isModMember(req['project_access'].userUuid)) {
+    if (req['project_access'].isOwner || await this.userValidations.isModMember(req['project_access'].userUuid)) {
       // Step 2: Check if the user with the target email exists
       const user = await this.prisma.users.findUnique({
         where: { email: targetEmail },
@@ -262,31 +262,6 @@ export class ProjectService {
     });
 
     return visibility.uuid;
-  }
-
-  async isModMember(userUuid: string) {
-    const permissionUuid = await this.getModPermission();
-    const hasPermissions = await this.prisma.projectMembers.findFirst({
-      where: {
-        userUuid: userUuid,
-        permissionUuid: permissionUuid
-      }
-    })
-    console.log(hasPermissions)
-    return hasPermissions !== null;
-  }
-
-  async getModPermission() {
-    const permission = await this.prisma.projectPermissions.findFirst({
-      where: {
-        name: 'mod',
-      },
-      select: {
-        uuid: true,
-      },
-    });
-
-    return permission.uuid;
   }
 
   async getMemberPermission() {

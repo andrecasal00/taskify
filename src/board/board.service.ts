@@ -1,11 +1,12 @@
-import { ForbiddenException, HttpStatus, Injectable } from '@nestjs/common';
+import { ForbiddenException, HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { BoardDto } from './dto/board.dto';
 import { empty } from '@prisma/client/runtime/library';
+import { UserValidations } from 'src/shared/utilities/user.validations';
 
 @Injectable()
 export class BoardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private userValidations: UserValidations) { }
 
   async createBoard(dto: BoardDto, req: Request) {
     // everyone with access can create a board
@@ -16,12 +17,7 @@ export class BoardService {
 
     const userUuid = req['project_access'].userUuid;
 
-    const userPermission = await this.checkUserPermission(
-      userUuid,
-      req['project_access'].projectUuid,
-    );
-
-    if (userPermission === 'mod' || !req['project_access'].isOwner) {
+    if (this.userValidations.isModMember(userUuid) || req['project_access'].isOwner) {
       const board = await this.prisma.boards.create({
         data: {
           projectUuid: req['project_access'].projectUuid,
@@ -31,7 +27,8 @@ export class BoardService {
       });
       return {
         statusCode: HttpStatus.CREATED,
-        data: [board],
+        message: "Board created with success",
+        data: board,
       };
     } else {
       throw new ForbiddenException(
@@ -41,19 +38,29 @@ export class BoardService {
   }
 
   async getBoards(req: Request) {
-    if (!req['project_access'].hasAccess) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    const boards = await this.prisma.boards.findMany({
-      where: {
-        projectUuid: req['project_access'].projectUuid
+    try {
+      if (!req['project_access'].hasAccess) {
+        throw new ForbiddenException('Access denied');
       }
-    });
-    return {
-      statusCode: HttpStatus.OK,
-      data: [boards],
-    };
+
+      const boards = await this.prisma.boards.findMany({
+        where: {
+          projectUuid: req['project_access'].projectUuid
+        }
+      });
+      return {
+        statusCode: HttpStatus.OK,
+        data: boards,
+      };
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Failed to fetch boards due to an internal error',
+      );
+    }
   }
 
   async deleteBoard(boardUuid: string, req: Request) {
@@ -65,12 +72,7 @@ export class BoardService {
 
     const userUuid = req['project_access'].userUuid;
 
-    const userPermission = await this.checkUserPermission(
-      userUuid,
-      req['project_access'].projectUuid,
-    );
-
-    if (userPermission === 'mod') {
+    if (this.userValidations.isModMember(userUuid) || req['project_access'].isOwner) {
       await this.prisma.boards.deleteMany({
         where: {
           uuid: boardUuid
@@ -78,39 +80,12 @@ export class BoardService {
       })
       return {
         statusCode: HttpStatus.OK,
-        data: "Board was deleted with success.",
+        data: "Board deleted with success",
       };
     } else {
       throw new ForbiddenException(
         "You don't have permissions to delete a board!",
       );
     }
-  }
-
-  async checkUserPermission(userUuid: string, projectUuid: string) {
-    const userPermission = await this.prisma.projectMembers.findFirst({
-      where: {
-        projectUuid: projectUuid,
-        userUuid: userUuid,
-      },
-      select: {
-        permissionUuid: true,
-      },
-    });
-
-    console.log(`user permission: ${userPermission.permissionUuid}`);
-
-    const permissions = await this.prisma.projectPermissions.findFirst({
-      where: {
-        uuid: userPermission.permissionUuid,
-      },
-      select: {
-        name: true,
-      },
-    });
-
-    console.log(`permission name: ${permissions.name}`);
-
-    return permissions.name;
   }
 }

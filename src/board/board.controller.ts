@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { BoardService } from './board.service';
 import { AccessTokenGuard } from 'src/shared/guards';
-import { GetCurrentUserUuid } from 'src/shared/decorators/current-user-uuid.decorator';
 import { BoardDto } from './dto/board.dto';
 
 @Controller('workspace/:workspace_uuid/project/:project_uuid/board')

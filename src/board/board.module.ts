@@ -4,11 +4,12 @@ import { BoardController } from './board.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { ProjectAccessMiddleware } from 'src/project/project.middleware';
 import { JwtService } from '@nestjs/jwt';
+import { SharedModule } from 'src/shared/shared.module';
 
 @Module({
   controllers: [BoardController],
   providers: [BoardService, JwtService],
-  imports: [PrismaModule],
+  imports: [PrismaModule, SharedModule],
 })
 export class BoardModule {
   configure(consumer: MiddlewareConsumer) {

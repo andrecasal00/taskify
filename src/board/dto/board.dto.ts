@@ -7,6 +7,6 @@ export class BoardDto {
     name: string
 
     @IsOptional()
-    @IsUrl({}, { message: 'Profile picture must be a valid URL.'})
+    @IsString()
     backgroundImage: string
 }
