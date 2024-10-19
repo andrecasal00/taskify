@@ -130,6 +130,8 @@ export class AuthService {
         },
         data: {
           refreshToken: null,
+          expiresAt: null,
+          issuedAt: null
         },
       });
 
@@ -206,6 +208,9 @@ export class AuthService {
   }
 
   async updateRefreshTokens(userUuid: string, refreshToken: string) {
+
+    const decodedToken = this.jwtService.decode(refreshToken);
+
     const hashToken = await argon.hash(refreshToken);
     await this.prisma.userTokens.upsert({
       where: {
@@ -213,10 +218,14 @@ export class AuthService {
       },
       update: {
         refreshToken: hashToken,
+        expiresAt: decodedToken.exp.toString(),
+        issuedAt: decodedToken.iat.toString()
       },
       create: {
         userUuid: userUuid,
         refreshToken: hashToken,
+        expiresAt: decodedToken.exp.toString(),
+        issuedAt: decodedToken.iat.toString()
       },
     });
   }
