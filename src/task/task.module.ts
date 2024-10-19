@@ -29,6 +29,10 @@ export class TaskModule {
           path: 'workspace/:workspace_uuid/project/:project_uuid/board/:board_uuid/task/:task_uuid/member',
           method: RequestMethod.ALL,
         },
+        {
+          path: 'workspace/:workspace_uuid/project/:project_uuid/board/:board_uuid/task/:task_uuid/comment',
+          method: RequestMethod.ALL,
+        },
       );
   }
 }

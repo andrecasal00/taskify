@@ -72,4 +72,27 @@ export class TaskController {
     ) {
         return this.taskService.removeMemberFromTask(dto.email, taskUuid, req);
     }
+
+    @UseGuards(AccessTokenGuard)
+    @Post(':task_uuid/comment')
+    @HttpCode(HttpStatus.OK)
+    async setTaskComment(
+        @Param('task_uuid') taskUuid: string,
+        @Body() data: string,
+        @Req() req,
+    ) {
+        console.log(`body: ${data['message']}`)
+        return this.taskService.setTaskComment(taskUuid, data['message'], req);
+    }
+
+    @UseGuards(AccessTokenGuard)
+    @Get(':task_uuid/comment')
+    @HttpCode(HttpStatus.OK)
+    async getTaskComments(
+        @Param('task_uuid') taskUuid: string,
+        @Body() data: string,
+        @Req() req,
+    ) {
+        return this.taskService.getTaskComments(taskUuid, req);
+    }
 }
