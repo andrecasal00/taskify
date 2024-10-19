@@ -263,6 +263,11 @@ export class TaskService {
                 select: {
                     message: true,
                     createdAt: true,
+                    tasks: {
+                        select: {
+                            title: true
+                        }
+                    },
                     users: {
                         select: {
                             name: true,
