@@ -59,7 +59,7 @@ export class WorkspaceService {
 
       // Fetch shared workspaces via raw query
       var sharedWorkspaces = await this.prisma.$queryRaw<Projects[]>`
-        SELECT tbl_workspaces.uuid, tbl_workspaces.name, tbl_workspaces.created_at AS createdAt
+        SELECT tbl_workspaces.uuid, tbl_workspaces.name, tbl_workspaces.created_at
         FROM tbl_workspaces 
         JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid
         JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid 
@@ -72,13 +72,13 @@ export class WorkspaceService {
         GROUP BY tbl_workspaces.uuid
       `;
 
-      const sharedWorkspacesWithMembers: Array<{ total: number, uuid: string; createdAt: string }> = await this.prisma.$queryRaw`
-        SELECT COUNT(tbl_project_members.user_uuid) AS total, tbl_workspaces.uuid AS uuid, tbl_workspaces.created_at AS createdAt FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
+      const sharedWorkspacesWithMembers: Array<{ total: number, uuid: string; }> = await this.prisma.$queryRaw`
+        SELECT COUNT(tbl_project_members.user_uuid) AS total, tbl_workspaces.uuid AS uuid FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
         JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid WHERE tbl_project_members.project_uuid = tbl_projects.uuid
         GROUP BY tbl_workspaces.uuid
       `;
 
-      //console.log(`numberOfMembers: ${workspacesWithMembers[0].total}\nworkspace: ${workspacesWithMembers[0].uuid}`)
+      //console.log(`numberOfMembers: ${sharedWorkspacesWithMembers[0].total}\nworkspace: ${sharedWorkspacesWithMembers[0].uuid}\ndate: ${sharedWorkspacesWithMembers[0].createdAt}`)
 
       workspaces = workspaces.map((workspace) => {
         let totalOfMembers = 0;
@@ -96,18 +96,15 @@ export class WorkspaceService {
 
       sharedWorkspaces = sharedWorkspaces.map((workspace) => {
         let totalOfMembers = 0;
-        let createdAt = null;
         sharedWorkspacesWithMembers.forEach((data) => {
           if (data.uuid === workspace.uuid) {
             totalOfMembers = Number(data.total);
-            createdAt = data.createdAt;
           }
         });
   
         return {
           ...workspace,
           totalOfMembers,
-          createdAt,
         };
       });
 
@@ -164,5 +161,14 @@ export class WorkspaceService {
     });
 
     return workspace !== null; // Return true if workspace exists
+  }
+
+  toCamelCase(snakeObj: any): any {
+    const camelObj = {};
+    for (const key in snakeObj) {
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()); // Convert snake_case to camelCase
+      camelObj[camelKey] = snakeObj[key];
+    }
+    return camelObj;
   }
 }
