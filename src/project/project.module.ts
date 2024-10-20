@@ -16,8 +16,8 @@ export class ProjectModule {
     consumer
       .apply(ProjectAccessMiddleware)
       .forRoutes(
-        { path: 'workspace/:workspace_uuid/project/:project_uuid/membership', method: RequestMethod.ALL },
-        { path: 'workspace/:workspace_uuid/project/:project_uuid/members', method: RequestMethod.ALL },
+        { path: 'workspace/:workspace_uuid/project/:project_uuid/member', method: RequestMethod.ALL },
+        { path: 'workspace/:workspace_uuid/project/:project_uuid/member', method: RequestMethod.ALL },
         { path: 'workspace/:workspace_uuid/project/', method: RequestMethod.ALL },
         { path: 'workspace/:workspace_uuid/project/:project_uuid', method: RequestMethod.ALL },
       );

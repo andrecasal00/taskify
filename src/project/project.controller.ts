@@ -57,7 +57,7 @@ export class ProjectController {
   }
 
   @UseGuards(AccessTokenGuard)
-  @Post('/:project_uuid/membership')
+  @Post('/:project_uuid/member')
   @HttpCode(HttpStatus.CREATED)
   async addMemberToProject(
     @Body() data: MemberDto,
@@ -67,7 +67,7 @@ export class ProjectController {
   }
 
   @UseGuards(AccessTokenGuard)
-  @Delete('/:project_uuid/membership')
+  @Delete('/:project_uuid/member')
   @HttpCode(HttpStatus.CREATED)
   async removeMemberFromProject(
     @Body() data: MemberDto,
