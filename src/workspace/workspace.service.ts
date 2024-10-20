@@ -59,7 +59,7 @@ export class WorkspaceService {
 
       // Fetch shared workspaces via raw query
       var sharedWorkspaces = await this.prisma.$queryRaw<Projects[]>`
-        SELECT tbl_workspaces.uuid, tbl_workspaces.name, tbl_workspaces.created_at 
+        SELECT tbl_workspaces.uuid, tbl_workspaces.name, tbl_workspaces.created_at AS createdAt
         FROM tbl_workspaces 
         JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid
         JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid 
