@@ -72,8 +72,8 @@ export class WorkspaceService {
         GROUP BY tbl_workspaces.uuid
       `;
 
-      const sharedWorkspacesWithMembers: Array<{ total: number, uuid: string;  }> = await this.prisma.$queryRaw`
-        SELECT COUNT(tbl_project_members.user_uuid) AS total, tbl_workspaces.uuid AS uuid FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
+      const sharedWorkspacesWithMembers: Array<{ total: number, uuid: string; createdAt: Date }> = await this.prisma.$queryRaw`
+        SELECT COUNT(tbl_project_members.user_uuid) AS total, tbl_workspaces.uuid AS uuid, tbl_workspaces.created_at AS createdAt FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
         JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid WHERE tbl_project_members.project_uuid = tbl_projects.uuid
         GROUP BY tbl_workspaces.uuid
       `;
@@ -96,15 +96,18 @@ export class WorkspaceService {
 
       sharedWorkspaces = sharedWorkspaces.map((workspace) => {
         let totalOfMembers = 0;
+        let createdAt = null;
         sharedWorkspacesWithMembers.forEach((data) => {
           if (data.uuid === workspace.uuid) {
             totalOfMembers = Number(data.total);
+            createdAt = data.createdAt;
           }
         });
   
         return {
           ...workspace,
           totalOfMembers,
+          createdAt,
         };
       });
 
