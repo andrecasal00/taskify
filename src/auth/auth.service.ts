@@ -115,7 +115,7 @@ export class AuthService {
     return {
       statusCode: HttpStatus.CREATED,
       message: 'Account created successfully',
-      data: tokens
+      data: tokens,
     };
   }
 
@@ -131,7 +131,7 @@ export class AuthService {
         data: {
           refreshToken: null,
           expiresAt: null,
-          issuedAt: null
+          issuedAt: null,
         },
       });
 
@@ -208,7 +208,6 @@ export class AuthService {
   }
 
   async updateRefreshTokens(userUuid: string, refreshToken: string) {
-
     const decodedToken = this.jwtService.decode(refreshToken);
 
     const hashToken = await argon.hash(refreshToken);
@@ -219,13 +218,13 @@ export class AuthService {
       update: {
         refreshToken: hashToken,
         expiresAt: decodedToken.exp.toString(),
-        issuedAt: decodedToken.iat.toString()
+        issuedAt: decodedToken.iat.toString(),
       },
       create: {
         userUuid: userUuid,
         refreshToken: hashToken,
         expiresAt: decodedToken.exp.toString(),
-        issuedAt: decodedToken.iat.toString()
+        issuedAt: decodedToken.iat.toString(),
       },
     });
   }

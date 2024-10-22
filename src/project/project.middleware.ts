@@ -13,7 +13,7 @@ export class ProjectAccessMiddleware implements NestMiddleware {
   constructor(
     private readonly prisma: PrismaService,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
     const { workspace_uuid, project_uuid } = req.params;
@@ -43,7 +43,7 @@ export class ProjectAccessMiddleware implements NestMiddleware {
         hasAccess: true,
         userUuid: userUuid,
         projectUuid: project_uuid,
-        workspaceUuid: workspace_uuid
+        workspaceUuid: workspace_uuid,
       };
       return next();
     }
@@ -66,7 +66,7 @@ export class ProjectAccessMiddleware implements NestMiddleware {
       hasAccess: true,
       userUuid: userUuid,
       projectUuid: project_uuid,
-      workspaceUuid: workspace_uuid
+      workspaceUuid: workspace_uuid,
     };
     return next();
   }

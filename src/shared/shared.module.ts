@@ -3,8 +3,8 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { UserValidations } from './utilities/user.validations';
 
 @Module({
-    imports: [PrismaModule],
-    providers: [UserValidations],
-    exports: [UserValidations]
+  imports: [PrismaModule],
+  providers: [UserValidations],
+  exports: [UserValidations],
 })
 export class SharedModule {}

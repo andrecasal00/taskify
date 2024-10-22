@@ -11,7 +11,16 @@ import { BoardModule } from './board/board.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, SharedModule, PrismaModule, WorkspaceModule, ProjectModule, TaskModule, BoardModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    AuthModule,
+    SharedModule,
+    PrismaModule,
+    WorkspaceModule,
+    ProjectModule,
+    TaskModule,
+    BoardModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

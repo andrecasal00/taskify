@@ -9,17 +9,29 @@ import { SharedModule } from 'src/shared/shared.module';
 @Module({
   providers: [ProjectService, JwtService],
   controllers: [ProjectController],
-  imports: [PrismaModule, SharedModule]
+  imports: [PrismaModule, SharedModule],
 })
 export class ProjectModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(ProjectAccessMiddleware)
       .forRoutes(
-        { path: 'workspace/:workspace_uuid/project/:project_uuid/member', method: RequestMethod.ALL },
-        { path: 'workspace/:workspace_uuid/project/:project_uuid/member', method: RequestMethod.ALL },
-        { path: 'workspace/:workspace_uuid/project/', method: RequestMethod.ALL },
-        { path: 'workspace/:workspace_uuid/project/:project_uuid', method: RequestMethod.ALL },
+        {
+          path: 'workspace/:workspace_uuid/project/:project_uuid/member',
+          method: RequestMethod.ALL,
+        },
+        {
+          path: 'workspace/:workspace_uuid/project/:project_uuid/member',
+          method: RequestMethod.ALL,
+        },
+        {
+          path: 'workspace/:workspace_uuid/project/',
+          method: RequestMethod.ALL,
+        },
+        {
+          path: 'workspace/:workspace_uuid/project/:project_uuid',
+          method: RequestMethod.ALL,
+        },
       );
   }
 }

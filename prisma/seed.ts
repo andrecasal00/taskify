@@ -2,8 +2,6 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-
-  
   // USER PERMISSIONS
   const adminDefaultPermission = await prisma.permissions.findMany({
     where: { permission: 'admin' },
@@ -21,7 +19,7 @@ async function main() {
     console.log('Default admin permission already exists');
   }
 
- const userDefaultPermission = await prisma.permissions.findMany({
+  const userDefaultPermission = await prisma.permissions.findMany({
     where: { permission: 'user' },
   });
 
@@ -37,7 +35,6 @@ async function main() {
     console.log('Default user permission already exists');
   }
 
-   
   // PROJECTS VISIBILITIES
   const publicProjectVisibility = await prisma.projectVisibility.findMany({
     where: { name: 'public' },
@@ -123,7 +120,7 @@ async function main() {
     console.log('Default project guest permission created');
   } else {
     console.log('Default project guest permission already exists');
-  } 
+  }
 }
 
 main()

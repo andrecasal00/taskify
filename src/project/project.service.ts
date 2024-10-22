@@ -12,7 +12,10 @@ import { UserValidations } from 'src/shared/utilities/user.validations';
 
 @Injectable()
 export class ProjectService {
-  constructor(private prisma: PrismaService, private userValidations: UserValidations) { }
+  constructor(
+    private prisma: PrismaService,
+    private userValidations: UserValidations,
+  ) {}
 
   async createProject(dto: ProjectDto, req: Request) {
     try {
@@ -35,14 +38,16 @@ export class ProjectService {
         });
         return { statusCode: HttpStatus.CREATED, data: project };
       } else {
-        throw new ForbiddenException("You don't have permissions to create a project in this workspace.");
-      }      
+        throw new ForbiddenException(
+          "You don't have permissions to create a project in this workspace.",
+        );
+      }
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
       }
 
-      console.log(error)
+      console.log(error);
 
       throw new InternalServerErrorException(
         'Failed to create projects due to an internal error',
@@ -57,7 +62,9 @@ export class ProjectService {
         throw new ForbiddenException('Access denied');
       }
 
-      console.log(`getUserProjects: workspace_uuid: ${req['project_access'].workspaceUuid}`)
+      console.log(
+        `getUserProjects: workspace_uuid: ${req['project_access'].workspaceUuid}`,
+      );
 
       // getting all the projects of user workspace where is owner
       const projects = await this.prisma.$queryRaw`
@@ -75,7 +82,7 @@ export class ProjectService {
       return {
         statusCode: HttpStatus.OK,
         ownerProjects: projects,
-        sharedProjects: memberProjects
+        sharedProjects: memberProjects,
       };
     } catch (error) {
       if (error instanceof ForbiddenException) {
@@ -110,10 +117,10 @@ export class ProjectService {
       if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
         throw new ForbiddenException('Access denied');
       }
-      
+
       if (req['project_access'].isOwner) {
         const visibilityUuid = await this.getPrivateVisibility();
-        
+
         const project = await this.prisma.projects.update({
           where: {
             uuid: req['project_access'].projectUuid,
@@ -123,17 +130,19 @@ export class ProjectService {
             name: dto.name,
             backgroundImage: dto.backgroundImage,
             description: dto.description,
-          }
-        })
+          },
+        });
         return { statusCode: HttpStatus.OK, data: project };
       } else {
-        throw new ForbiddenException("You don't have permissions to create a project in this workspace.");
+        throw new ForbiddenException(
+          "You don't have permissions to create a project in this workspace.",
+        );
       }
     } catch (error) {
       if (error instanceof ForbiddenException) {
         throw error;
       }
-      console.log(error)
+      console.log(error);
       throw new InternalServerErrorException(
         'Failed to patch the project due to an internal error',
       );
@@ -141,18 +150,19 @@ export class ProjectService {
   }
 
   // assuming that we are inside of the project page
-  async addMemberToProject(
-    targetEmail: string,
-    req: Request,
-  ) {
-
+  async addMemberToProject(targetEmail: string, req: Request) {
     // Step 1: Validate if the current user is the owner of the project or has access
     if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
       throw new ForbiddenException('Access denied');
     }
 
     // Step 2: Check if the user has permissions to add a member (owner or mod)
-    if (req['project_access'].isOwner || await this.userValidations.isModMember(req['project_access'].userUuid).valueOf()) {
+    if (
+      req['project_access'].isOwner ||
+      (await this.userValidations
+        .isModMember(req['project_access'].userUuid)
+        .valueOf())
+    ) {
       // Step 3: Check if the user with the target email exists
       const user = await this.prisma.users.findUnique({
         where: { email: targetEmail },
@@ -163,8 +173,15 @@ export class ProjectService {
         throw new NotFoundException('Email not found');
       }
 
-      if (await this.userValidations.isOwnerEmail(targetEmail, req['project_access'].projectUuid)) {
-        throw new ConflictException('You cannot add the owner of this project!');
+      if (
+        await this.userValidations.isOwnerEmail(
+          targetEmail,
+          req['project_access'].projectUuid,
+        )
+      ) {
+        throw new ConflictException(
+          'You cannot add the owner of this project!',
+        );
       }
 
       // Step 4: Check if the user is already a member of the project
@@ -197,21 +214,25 @@ export class ProjectService {
         data: projectMember,
       };
     } else {
-      throw new ForbiddenException("You don't have permissions to add a member.")
+      throw new ForbiddenException(
+        "You don't have permissions to add a member.",
+      );
     }
   }
 
-  async removeMemberFromProject(
-    targetEmail: string,
-    req: Request,
-  ) {
+  async removeMemberFromProject(targetEmail: string, req: Request) {
     // Step 1: Validate if the current user is the owner of the project or has access
     if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
       throw new ForbiddenException('Access denied');
     }
 
     // Step 2: Check if the user has permissions to remove a member (owner or mod)
-    if (req['project_access'].isOwner || await this.userValidations.isModMember(req['project_access'].userUuid).valueOf()) {
+    if (
+      req['project_access'].isOwner ||
+      (await this.userValidations
+        .isModMember(req['project_access'].userUuid)
+        .valueOf())
+    ) {
       // Step 2: Check if the user with the target email exists
       const user = await this.prisma.users.findUnique({
         where: { email: targetEmail },
@@ -222,8 +243,15 @@ export class ProjectService {
         throw new NotFoundException('Email not found');
       }
 
-      if (await this.userValidations.isOwnerEmail(targetEmail, req['project_access'].projectUuid)) {
-        throw new ConflictException('You cannot remove the owner of this project!');
+      if (
+        await this.userValidations.isOwnerEmail(
+          targetEmail,
+          req['project_access'].projectUuid,
+        )
+      ) {
+        throw new ConflictException(
+          'You cannot remove the owner of this project!',
+        );
       }
 
       // Step 3: Check if the user is already a member of the project
@@ -244,7 +272,9 @@ export class ProjectService {
         );
       }
     } else {
-      throw new ForbiddenException("You don't have permissions to remove a member.")
+      throw new ForbiddenException(
+        "You don't have permissions to remove a member.",
+      );
     }
 
     return {
@@ -266,10 +296,7 @@ export class ProjectService {
     return visibility.uuid;
   }
 
-  async getProjectMembers(
-    req: Request,
-  ) {
-
+  async getProjectMembers(req: Request) {
     // Step 1: Validate if the current user is the owner of the project or has access
     if (!req['project_access'].isOwner && !req['project_access'].hasAccess) {
       throw new ForbiddenException('Access denied');
@@ -277,17 +304,17 @@ export class ProjectService {
 
     const members = await this.prisma.projectMembers.findMany({
       where: {
-        projectUuid: req['project_access'].projectUuid
+        projectUuid: req['project_access'].projectUuid,
       },
       include: {
         users: {
           select: {
             name: true,
-            email: true
+            email: true,
           },
         },
-      }
-    })
+      },
+    });
 
     return {
       statusCode: HttpStatus.OK,

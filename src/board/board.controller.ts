@@ -14,7 +14,13 @@ import {
 import { BoardService } from './board.service';
 import { AccessTokenGuard } from 'src/shared/guards';
 import { BoardDto } from './dto/board.dto';
-import { ApiCreatedResponse, ApiForbiddenResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @ApiTags('board')
 @Controller('workspace/:workspace_uuid/project/:project_uuid/board')
@@ -25,13 +31,15 @@ export class BoardController {
   @UseGuards(AccessTokenGuard)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({summary: 'creates a new board'})
-  @ApiCreatedResponse({description: 'board created with success', type: BoardDto})
-  @ApiForbiddenResponse({description: 'user does not have permissions to create a board'})
-  async createBoard(
-    @Body() dto: BoardDto,
-    @Req() req,
-  ) {
+  @ApiOperation({ summary: 'creates a new board' })
+  @ApiCreatedResponse({
+    description: 'board created with success',
+    type: BoardDto,
+  })
+  @ApiForbiddenResponse({
+    description: 'user does not have permissions to create a board',
+  })
+  async createBoard(@Body() dto: BoardDto, @Req() req) {
     return this.boardService.createBoard(dto, req);
   }
 
@@ -39,13 +47,12 @@ export class BoardController {
   @UseGuards(AccessTokenGuard)
   @Delete('/:board_uuid')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({summary: 'delete a board from a project'})
-  @ApiOkResponse({description: 'board deleted with success'})
-  @ApiForbiddenResponse({description: 'user does not have permissions to create a board'})
-  async deleteBoard(
-    @Param('board_uuid') boardUuid,
-    @Req() req
-  ) {
+  @ApiOperation({ summary: 'delete a board from a project' })
+  @ApiOkResponse({ description: 'board deleted with success' })
+  @ApiForbiddenResponse({
+    description: 'user does not have permissions to create a board',
+  })
+  async deleteBoard(@Param('board_uuid') boardUuid, @Req() req) {
     return this.boardService.deleteBoard(boardUuid, req);
   }
 
@@ -53,13 +60,15 @@ export class BoardController {
   @UseGuards(AccessTokenGuard)
   @Patch('/:board_uuid')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({summary: 'update a board from a project'})
-  @ApiOkResponse({description: 'board updated with success'})
-  @ApiForbiddenResponse({description: 'user does not have permissions to create a board'})
+  @ApiOperation({ summary: 'update a board from a project' })
+  @ApiOkResponse({ description: 'board updated with success' })
+  @ApiForbiddenResponse({
+    description: 'user does not have permissions to create a board',
+  })
   async updateBoard(
     @Param('board_uuid') boardUuid,
     @Req() req,
-    @Body() dto: BoardDto
+    @Body() dto: BoardDto,
   ) {
     return this.boardService.updateBoard(boardUuid, req, dto);
   }
@@ -68,9 +77,15 @@ export class BoardController {
   @UseGuards(AccessTokenGuard)
   @Get()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({summary: 'get all boards from a project'})
-  @ApiOkResponse({description: 'list of boards', type: BoardDto, isArray: true})
-  @ApiForbiddenResponse({description: 'user does not have permissions to create a board'})
+  @ApiOperation({ summary: 'get all boards from a project' })
+  @ApiOkResponse({
+    description: 'list of boards',
+    type: BoardDto,
+    isArray: true,
+  })
+  @ApiForbiddenResponse({
+    description: 'user does not have permissions to create a board',
+  })
   async getBoards(@Req() req) {
     return this.boardService.getBoards(req);
   }

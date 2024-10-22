@@ -4,7 +4,10 @@ import { AuthController } from './auth.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { AccessTokenStrategy, RefreshTokenStrategy } from 'src/shared/strategies';
+import {
+  AccessTokenStrategy,
+  RefreshTokenStrategy,
+} from 'src/shared/strategies';
 
 @Module({
   providers: [AuthService, AccessTokenStrategy, RefreshTokenStrategy],

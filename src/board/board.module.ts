@@ -13,17 +13,15 @@ import { SharedModule } from 'src/shared/shared.module';
 })
 export class BoardModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(ProjectAccessMiddleware)
-      .forRoutes(
-        {
-          path: 'workspace/:workspace_uuid/project/:project_uuid/board/',
-          method: RequestMethod.ALL,
-        },
-        {
-          path: 'workspace/:workspace_uuid/project/:project_uuid/board/:board_uuid',
-          method: RequestMethod.ALL,
-        },
-      );
+    consumer.apply(ProjectAccessMiddleware).forRoutes(
+      {
+        path: 'workspace/:workspace_uuid/project/:project_uuid/board/',
+        method: RequestMethod.ALL,
+      },
+      {
+        path: 'workspace/:workspace_uuid/project/:project_uuid/board/:board_uuid',
+        method: RequestMethod.ALL,
+      },
+    );
   }
 }

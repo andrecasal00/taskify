@@ -12,7 +12,7 @@ import { Projects } from '@prisma/client';
 
 @Injectable()
 export class WorkspaceService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   validateUser(userUuid: string) {
     if (!userUuid) {
@@ -66,13 +66,17 @@ export class WorkspaceService {
         WHERE tbl_project_members.user_uuid = ${userUuid}
       `;
 
-      const workspacesWithMembers: Array<{ total: number, uuid: string;  }> = await this.prisma.$queryRaw`
+      const workspacesWithMembers: Array<{ total: number; uuid: string }> =
+        await this.prisma.$queryRaw`
         SELECT COUNT(tbl_project_members.user_uuid) AS total, tbl_workspaces.uuid AS uuid FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
         JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid WHERE tbl_workspaces.owner_uuid = ${userUuid}
         GROUP BY tbl_workspaces.uuid
       `;
 
-      const sharedWorkspacesWithMembers: Array<{ total: number, uuid: string; }> = await this.prisma.$queryRaw`
+      const sharedWorkspacesWithMembers: Array<{
+        total: number;
+        uuid: string;
+      }> = await this.prisma.$queryRaw`
         SELECT COUNT(tbl_project_members.user_uuid) AS total, tbl_workspaces.uuid AS uuid FROM tbl_workspaces JOIN tbl_projects ON tbl_workspaces.uuid = tbl_projects.workspace_uuid 
         JOIN tbl_project_members ON tbl_project_members.project_uuid = tbl_projects.uuid WHERE tbl_project_members.project_uuid = tbl_projects.uuid
         GROUP BY tbl_workspaces.uuid
@@ -87,7 +91,7 @@ export class WorkspaceService {
             totalOfMembers = Number(data.total);
           }
         });
-  
+
         return {
           ...workspace,
           totalOfMembers,
@@ -101,7 +105,7 @@ export class WorkspaceService {
             totalOfMembers = Number(data.total);
           }
         });
-  
+
         return {
           ...workspace,
           totalOfMembers,
@@ -130,7 +134,9 @@ export class WorkspaceService {
       // Step 1: Verify ownership of workspace
       const isOwner = await this.isWorkspaceOwner(userUuid, workspaceUuid);
       if (!isOwner) {
-        throw new ForbiddenException('You are not the owner of this workspace!');
+        throw new ForbiddenException(
+          'You are not the owner of this workspace!',
+        );
       }
 
       // Step 2: Delete workspace
@@ -143,7 +149,10 @@ export class WorkspaceService {
         message: 'Workspace was deleted successfully!',
       };
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException('Workspace not found or already deleted.');
       }
       console.error(error);
@@ -166,7 +175,9 @@ export class WorkspaceService {
   toCamelCase(snakeObj: any): any {
     const camelObj = {};
     for (const key in snakeObj) {
-      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()); // Convert snake_case to camelCase
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) =>
+        letter.toUpperCase(),
+      ); // Convert snake_case to camelCase
       camelObj[camelKey] = snakeObj[key];
     }
     return camelObj;

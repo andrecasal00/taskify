@@ -1,4 +1,9 @@
-import { ForbiddenException, HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { BoardDto } from './dto/board.dto';
 import { empty } from '@prisma/client/runtime/library';
@@ -6,7 +11,10 @@ import { UserValidations } from 'src/shared/utilities/user.validations';
 
 @Injectable()
 export class BoardService {
-  constructor(private prisma: PrismaService, private userValidations: UserValidations) { }
+  constructor(
+    private prisma: PrismaService,
+    private userValidations: UserValidations,
+  ) {}
 
   async createBoard(dto: BoardDto, req: Request) {
     // everyone with access can create a board
@@ -17,9 +25,14 @@ export class BoardService {
 
     const userUuid = req['project_access'].userUuid;
 
-    console.log(`modMember?: ${(await this.userValidations.isModMember(userUuid)).valueOf()}`)
+    console.log(
+      `modMember?: ${(await this.userValidations.isModMember(userUuid)).valueOf()}`,
+    );
 
-    if ((await this.userValidations.isModMember(userUuid)).valueOf() || req['project_access'].isOwner) {
+    if (
+      (await this.userValidations.isModMember(userUuid)).valueOf() ||
+      req['project_access'].isOwner
+    ) {
       const board = await this.prisma.boards.create({
         data: {
           projectUuid: req['project_access'].projectUuid,
@@ -29,7 +42,7 @@ export class BoardService {
       });
       return {
         statusCode: HttpStatus.CREATED,
-        message: "Board created with success",
+        message: 'Board created with success',
         data: board,
       };
     } else {
@@ -47,8 +60,8 @@ export class BoardService {
 
       const boards = await this.prisma.boards.findMany({
         where: {
-          projectUuid: req['project_access'].projectUuid
-        }
+          projectUuid: req['project_access'].projectUuid,
+        },
       });
       return {
         statusCode: HttpStatus.OK,
@@ -74,15 +87,18 @@ export class BoardService {
 
     const userUuid = req['project_access'].userUuid;
 
-    if ((await this.userValidations.isModMember(userUuid)).valueOf() || req['project_access'].isOwner) {
+    if (
+      (await this.userValidations.isModMember(userUuid)).valueOf() ||
+      req['project_access'].isOwner
+    ) {
       await this.prisma.boards.deleteMany({
         where: {
-          uuid: boardUuid
-        }
-      })
+          uuid: boardUuid,
+        },
+      });
       return {
         statusCode: HttpStatus.OK,
-        data: "Board deleted with success",
+        data: 'Board deleted with success',
       };
     } else {
       throw new ForbiddenException(
@@ -98,16 +114,19 @@ export class BoardService {
 
     const userUuid = req['project_access'].userUuid;
 
-    if ((await this.userValidations.isModMember(userUuid)).valueOf() || req['project_access'].isOwner) {
+    if (
+      (await this.userValidations.isModMember(userUuid)).valueOf() ||
+      req['project_access'].isOwner
+    ) {
       await this.prisma.boards.update({
         where: {
-          uuid: boardUuid
+          uuid: boardUuid,
         },
-        data: dto
-      })
+        data: dto,
+      });
       return {
         statusCode: HttpStatus.OK,
-        data: "Board updated with success",
+        data: 'Board updated with success',
       };
     } else {
       throw new ForbiddenException(
