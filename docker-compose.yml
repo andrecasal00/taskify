@@ -6,10 +6,22 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USERNAME}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}      
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - '5432:5432'
     volumes:
-      - 'taskifydb:/var/lib/postgresql/data'    
+      - 'taskifydb:/var/lib/postgresql/data'
+  mongo:
+    image: 'mongo:latest'
+    container_name: 'mongo'
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: examplepassword # Change this!
+    ports:
+      - '27017:27017' # Exposing the MongoDB port
+    volumes:
+      - mongo_data:/data/db # Persistent volume for MongoDB data
 volumes:
   taskifydb:
+  mongo_data:
