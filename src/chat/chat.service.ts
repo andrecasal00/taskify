@@ -17,11 +17,11 @@ export class ChatService {
 
   // Create a chat group for a new project
   async createChatGroup(
-    project_id: string,
+    board_id: string,
     members: string[],
   ): Promise<ChatGroup> {
     const newGroup = new this.chatGroupModel({
-      project_id,
+      board_id,
       members,
     });
     return newGroup.save();
@@ -29,13 +29,13 @@ export class ChatService {
 
   // Send a message in the chat
   async sendMessage(
-    project_id: string,
+    board_id: string,
     sender_id: string,
     message: string,
     attachments: any[] = [],
   ): Promise<ChatMessage> {
     const newMessage = new this.chatMessageModel({
-      project_id,
+      board_id,
       sender_id,
       message,
       attachments,
@@ -43,13 +43,13 @@ export class ChatService {
     return newMessage.save();
   }
 
-  // Fetch all messages for a project (with pagination)
-  async getMessagesForProject(
-    project_id: string,
+  // Fetch all messages for a board (with pagination)
+  async getMessagesForBoard(
+    board_id: string,
     limit = 50,
   ): Promise<ChatMessage[]> {
     return this.chatMessageModel
-      .find({ project_id })
+      .find({ board_id })
       .sort({ timestamp: -1 })
       .limit(limit)
       .exec();
